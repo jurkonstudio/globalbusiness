@@ -7,7 +7,7 @@ import { confirmDialog, busy, classifyError } from './ui.js';
 import { esc } from '../core/escape.js';
 import { missingFor } from '../core/ops.js';
 import { qty } from '../core/format.js';
-import { REGIONS, REGION, BONUS_LABEL, landFee } from '../config/regions.js';
+import { REGIONS, REGION, BONUS_LABEL, landFee, PLOT_KINDS, plotKind, plotAllows, plotCounts } from '../config/regions.js';
 import { loadMissions, claimable, openMissions } from './missions.js';
 
 const ICON = { agriculture: '🌳', utility: '⚡', extraction: '⛏️', construction: '🧱', retail: '🛒' };
@@ -19,7 +19,7 @@ const upgradeSecs = (bt, lvl) => Math.max(bt.build_seconds ?? 0, 60) * lvl;
 
 // The 3D scene mounts into #map-stage. `inline` = embedded in a normal page (Land Slots), no HUD.
 export const landGridHtml = (inline = false) => `<div id="map-stage" class="map-stage${inline ? ' inline' : ''}">
-    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to pan · pinch to zoom · tap a plot to build, tap a building to run it</div>'}</div>
+    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to pan · pinch to zoom · tap a green farm plot or a shop plot to build, tap a building to run or upgrade it</div>'}</div>
   ${inline ? '' : `<div class="hud rbar"><div class="rinfo" id="map-rinfo"></div><div class="rchips" id="map-chips"></div></div>
   <a class="hud idle" href="#/buildings/production" id="idle-box"></a>
   <div class="hud tools">
@@ -49,7 +49,7 @@ function regionUI(id = curRegion) {
   const r = REGION[id];
   info.innerHTML = !r ? 'World view · tap an island to visit it'
     : lvl < r.unlock ? `🔒 <b>${r.name}</b> unlocks at Level ${r.unlock} (you are Level ${lvl})`
-    : `<b>${r.name}</b>${r.bonus ? ` · ${BONUS_LABEL[r.bonus]} +${r.pct}%` : ' · Headquarters'}${r.distance ? ` · land fee ${money(landFee(r))} · freight on harvest` : ' · no freight'}`;
+    : `<b>${r.name}</b>${r.bonus ? ` · ${BONUS_LABEL[r.bonus]} +${r.pct}%` : ' · Headquarters'}${r.distance ? ` · land fee ${money(landFee(r))} · freight on harvest` : ' · no freight'}<br><small>${Object.entries(plotCounts(id)).filter(([, n]) => n).map(([k, n]) => `${PLOT_KINDS[k].icon} ${n} ${PLOT_KINDS[k].short.toLowerCase()}`).join(' · ')} plots · 1 building per plot</small>`;
 }
 
 // The 3D scene is created once and re-attached on every visit to the map (no WebGL restart, no re-download).
@@ -65,6 +65,8 @@ function onPick(region, slot) {
     if (region !== 'home') { toast('Finish the tutorial on Home Isle first.'); return; }
     if (ctx.hasOrchard && lvl < 1) { toast('Wait for your apples to grow, then collect them.'); return; }
     if (ctx.hasStore) { toast('Open Retail > Stores and put your apples on sale.'); return; }
+    const need = lvl >= 1 ? 'shop' : 'farm';
+    if (plotKind(region, slot) !== need) { toast(need === 'farm' ? 'Plant your orchard on a green farm plot 🌾.' : 'Build your Grocery Store on a shop plot 🛒 (the striped stalls).'); return; }
   }
   choose(region, slot, ctx.types);
 }
@@ -219,7 +221,7 @@ function fallback2D(stage) {
       Array.from({ length: r.slots }, (_, i) => {
         const x = ctx.bySlot[`${r.id}:${i}`];
         return x ? `<button class="map-slot used" data-slot="${i}">${ICON[x.building_types.category] ?? '🏭'}</button>`
-                 : `<button class="map-slot" data-slot="${i}" aria-label="Empty plot">+</button>`;
+                 : `<button class="map-slot" data-slot="${i}" aria-label="Empty ${PLOT_KINDS[plotKind(r.id, i)].label}">${PLOT_KINDS[plotKind(r.id, i)].icon}+</button>`;
       }).join('');
   };
   draw();
@@ -321,15 +323,17 @@ const TYPE_EMOJI = { 'apple-orchard': '🍎', plantation: '🌾', 'water-reservo
 function choose(region, slot, types) {
   const tutorial = !state.company.tutorial_done, r = REGION[region], lvl = state.company.level;
   const orchardDone = tutorial && lvl >= 1;
-  const list = tutorial ? types.filter((x) => x.slug === (orchardDone ? 'grocery-store' : 'apple-orchard')) : types;
-  if (!list.length) { toast('The Grocery Store is not installed yet. Run migration 013 in Supabase.', true); return; }
+  const kind = plotKind(region, slot), zone = PLOT_KINDS[kind];
+  const list = (tutorial ? types.filter((x) => x.slug === (orchardDone ? 'grocery-store' : 'apple-orchard')) : types).filter((x) => plotAllows(kind, x.category));
+  if (!list.length) { toast(tutorial ? 'The Grocery Store is not installed yet. Run migration 013 in Supabase.' : `No building can be placed on a ${zone.label.toLowerCase()} yet.`, true); return; }
   const cats = CAT_ORDER.filter((c) => list.some((x) => x.category === c));
   for (const x of list) if (!cats.includes(x.category)) cats.push(x.category);
   let cat = cats[0], pick = null;
   const costOf = (x) => Number(x.build_cost) + landFee(r);
   const m = document.createElement('div');
   m.className = 'modal sheet';
-  m.innerHTML = `<div class="card stack modal-box"><h3>${r.name} · plot ${slot + 1}</h3>
+  m.innerHTML = `<div class="card stack modal-box"><h3>${zone.icon} ${zone.label} ${slot + 1} · ${r.name}</h3>
+    <p class="muted">${zone.hint} A plot holds one building only.</p>
     ${cats.length > 1 ? '<div class="bs-tabs" id="bs-tabs"></div>' : ''}
     <div class="bs-list" id="bs-list"></div>
     <p class="muted" id="bs-note"></p>
@@ -353,7 +357,7 @@ function choose(region, slot, types) {
     $('#bs-note').textContent = tutorial
       ? (orchardDone ? 'Your store sells apples to customers while you play, and even while you are away. It takes about a minute to build.'
         : 'Planting uses 1 Seeds and 2 Water from your warehouse and starts growing apples.')
-      : `Construction runs on the server, so it finishes even if you close the game.${r.distance ? ` Includes a ${money(landFee(r))} land fee.` : ''}`;
+      : `${kind === 'shop' ? 'You can upgrade it up to LVL ' + MAX_LEVEL + ' later. ' : ''}Construction runs on the server, so it finishes even if you close the game.${r.distance ? ` Includes a ${money(landFee(r))} land fee.` : ''}`;
     const go = $('#go');
     go.textContent = tutorial && !orchardDone ? 'Plant apples' : x ? `Build ${x.name}` : 'Build';
     go.disabled = !x || (!tutorial && lvl < x.unlock_level);

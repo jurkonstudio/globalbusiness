@@ -7,7 +7,7 @@ import { money, duration } from '../../core/format.js';
 
 export function render() {
   return shell('Buildings', 'Construction', `
-    <p class="muted" style="margin-top:0">Pick a building here, then place it on an empty plot of the map. Other islands add a land fee per plot.</p>
+    <p class="muted" style="margin-top:0">Each plot holds one building: farms go on 🌾 farm plots, the Grocery Store on 🛒 shop plots. Other islands add a land fee per plot.</p>
     <div id="list">${skeleton(3, 120)}</div>`);
 }
 

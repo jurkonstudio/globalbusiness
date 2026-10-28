@@ -17,3 +17,26 @@ export const ROUTES = [
 
 export const BONUS_LABEL = { agriculture: 'Farms', extraction: 'Mines', construction: 'Factories', utility: 'Utilities' };
 export const landFee = (r) => r.distance * 500;
+
+// ---- Plot zones (Sim Companies style: every plot has ONE job and holds exactly ONE building) ----
+//   farm     -> one farm (agriculture building)
+//   shop     -> one retail building (Grocery Store, upgradable)
+//   industry -> utilities, mines, factories
+// Mirrors plot_kind() in migration 015; the server enforces it. Home Isle: rows 1-2 farms, row 3 shops, row 4 industry.
+export const PLOT_KINDS = {
+  farm:     { label: 'Farm plot',     short: 'Farm',     icon: '🌾', cats: ['agriculture'],                         hint: 'One farm per plot. It grows agriculture goods.' },
+  shop:     { label: 'Shop plot',     short: 'Shop',     icon: '🛒', cats: ['retail'],                              hint: 'One retail building per plot. Upgrade it to sell faster.' },
+  industry: { label: 'Industry plot', short: 'Industry', icon: '🏭', cats: ['utility', 'extraction', 'construction'], hint: 'Utilities, mines and factories.' },
+};
+const HOME_ROWS = ['farm', 'farm', 'shop', 'industry'];
+export function plotKind(regionId, slot) {
+  const r = REGION[regionId] ?? REGION.home;
+  if (r.id === 'home') return HOME_ROWS[Math.floor(slot / r.cols)] ?? 'industry';
+  return r.id === 'verdant' ? 'farm' : 'industry';
+}
+export const plotAllows = (kind, category) => PLOT_KINDS[kind].cats.includes(category);
+export function plotCounts(regionId) {
+  const out = { farm: 0, shop: 0, industry: 0 };
+  for (let i = 0; i < REGION[regionId].slots; i++) out[plotKind(regionId, i)]++;
+  return out;
+}

@@ -9,7 +9,7 @@
 //   * status     -> pill above the building: Collect / Start / timer / Needs inputs
 //   * supply line-> animated dashes while a building is producing, a truck drives the trunk road
 //   * tap        -> building (production, upgrade, demolish sheet) or empty plot (build sheet)
-import { REGIONS, REGION } from '../config/regions.js';
+import { REGIONS, REGION, PLOT_KINDS, plotKind } from '../config/regions.js';
 
 const HW = 36, HH = 18;          // half tile: 2:1 isometric
 const SLAB = 14;                 // island thickness in px
@@ -112,20 +112,44 @@ function tree(x, y, s, fruit, glow) {
   circle(sx, sy - 21 * s, 10 * s, '#58b153'); circle(sx - 3 * s, sy - 24 * s, 5 * s, '#7fcf6f');
   if (fruit) for (const [dx, dy] of [[-5, -19], [4, -24], [7, -17], [-1, -15], [-8, -23]]) circle(sx + dx * s, sy + dy * s, (glow ? 2.9 : 2.2) * s, glow ? '#ff5a36' : BRAND);
 }
-const pad = (o, fill = '#e6e1d0') => diamond(o.gx + 0.05, o.gy + 0.05, o.gx + 0.95, o.gy + 0.95, 0, fill, 'rgba(13,27,42,.2)', 1);
+const pad = (o, fill = '#e6e1d0') => diamond(o.gx + 0.12, o.gy + 0.12, o.gx + 0.88, o.gy + 0.88, 0, fill, 'rgba(13,27,42,.2)', 1);
+
+// ---------- Plot zones: farm / shop / industry ----------
+const ZONE = {
+  farm:     { a: '#a5d46f', b: '#93c75c', edge: '#4f8f3c' },
+  shop:     { a: '#efe3c8', b: '#e6d6b2', edge: '#c27a22' },
+  industry: { a: '#d5d9dc', b: '#c7ccd0', edge: '#6b7782' },
+};
+function zoneIcon(kind, gx, gy) {                       // small sign drawn on an EMPTY plot
+  if (kind === 'farm') {
+    for (let i = 0; i < 4; i++) { const y = gy + 0.3 + i * 0.14; diamond(gx + 0.16, y, gx + 0.84, y + 0.07, 0, i % 2 ? '#8d6b45' : '#a67c52'); }
+    for (const [u, v] of [[0.32, 0.34], [0.52, 0.5], [0.7, 0.66]]) {
+      const [sx, sy] = P(gx + u, gy + v, 0); c.strokeStyle = '#2f7d32'; c.lineWidth = 1.6;
+      c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx, sy - 7); c.stroke();
+      c.fillStyle = '#58b153'; c.beginPath(); c.ellipse(sx - 3, sy - 7, 3.2, 1.6, -0.6, 0, TAU); c.ellipse(sx + 3, sy - 8, 3.2, 1.6, 0.6, 0, TAU); c.fill();
+    }
+  } else if (kind === 'shop') {
+    box(gx + 0.3, gy + 0.3, gx + 0.7, gy + 0.6, 0, 7, mk('#f2ead8'));
+    for (let i = 0; i < 4; i++) { const a = gx + 0.26 + 0.12 * i; poly([P(a, gy + 0.6, 12), P(a + 0.12, gy + 0.6, 12), P(a + 0.12, gy + 0.72, 7), P(a, gy + 0.72, 7)], i % 2 ? CARD : BRAND, LINE, 0.5); }
+  } else {
+    const [sx, sy] = P(gx + 0.5, gy + 0.5, 0);
+    c.strokeStyle = '#6b7782'; c.lineWidth = 2.2; c.beginPath(); c.ellipse(sx, sy - 3, 6, 3.4, 0, 0, TAU); c.stroke();
+    for (let k = 0; k < 8; k++) { const a = k * TAU / 8; c.beginPath(); c.moveTo(sx + Math.cos(a) * 6, sy - 3 + Math.sin(a) * 3.4); c.lineTo(sx + Math.cos(a) * 9, sy - 3 + Math.sin(a) * 5); c.stroke(); }
+  }
+}
 
 // ---------- Buildings ----------
 function dOrchard(o) {
   const { gx, gy } = o;
-  diamond(gx + 0.05, gy + 0.05, gx + 0.95, gy + 0.95, 0, '#78b658', '#4f8f3c', 1);
-  diamond(gx + 0.14, gy + 0.14, gx + 0.86, gy + 0.86, 0, '#8bc767');
+  diamond(gx + 0.12, gy + 0.12, gx + 0.88, gy + 0.88, 0, '#78b658', '#4f8f3c', 1);
+  diamond(gx + 0.18, gy + 0.18, gx + 0.82, gy + 0.82, 0, '#8bc767');
   const n = [2, 3, 4, 5, 7, 9][Math.min(5, o.level - 1)], s = n <= 3 ? 1 : n <= 5 ? 0.92 : 0.8;
   const sl = [[.35, .35], [.65, .65], [.65, .35], [.35, .65], [.5, .5], [.5, .14], [.5, .86], [.14, .5], [.86, .5]].slice(0, n).sort((a, b) => a[0] + a[1] - (b[0] + b[1]));
   for (const [u, v] of sl) tree(gx + u, gy + v, s, true, o.status === 'ready');
 }
 function dPlantation(o) {
   const { gx, gy, hf } = o;
-  diamond(gx + 0.05, gy + 0.05, gx + 0.95, gy + 0.95, 0, '#cdb67f', '#9a8556', 1);
+  diamond(gx + 0.12, gy + 0.12, gx + 0.88, gy + 0.88, 0, '#cdb67f', '#9a8556', 1);
   for (let i = 0; i < 5; i++) { const y = gy + 0.44 + i * 0.09; diamond(gx + 0.1, y, gx + 0.92, y + 0.06, 0, i % 2 ? '#6fb14f' : '#9bd06a'); }
   const f = mk('#d9d2bd'); box(gx + 0.12, gy + 0.1, gx + 0.5, gy + 0.4, 0, 18 * hf, { ...f, top: '#c4483a' });
   wall('y', gy + 0.4, gx + 0.2, gx + 0.38, 0, 11 * hf, '#7a3b2a');
@@ -221,7 +245,7 @@ const DRAW = { 'apple-orchard': dOrchard, plantation: dPlantation, 'water-reserv
 function scaffold(o, prog, ghost, t) {
   const x0 = o.gx + 0.1, x1 = o.gx + 0.9, y0 = o.gy + 0.1, y1 = o.gy + 0.9, H = ghost ? o.H + 8 : 38;
   if (!ghost) {
-    diamond(o.gx + 0.04, o.gy + 0.04, o.gx + 0.96, o.gy + 0.96, 0, '#e2dccb', 'rgba(13,27,42,.25)', 1);
+    diamond(o.gx + 0.12, o.gy + 0.12, o.gx + 0.88, o.gy + 0.88, 0, '#e2dccb', 'rgba(13,27,42,.25)', 1);
     box(x0 + 0.08, y0 + 0.08, x1 - 0.08, y1 - 0.08, 0, Math.max(3, prog * (H - 8)), mk('#d8c9a5'));
   }
   c.strokeStyle = '#d99a14'; c.lineWidth = 1.5; c.lineJoin = 'round';
@@ -374,14 +398,20 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     poly([D, C, [C[0], C[1] + SLAB], [D[0], D[1] + SLAB]], '#d8c9a3', LINE, 0.8);
     poly([B, C, [C[0], C[1] + SLAB], [B[0], B[1] + SLAB]], '#b9a77c', LINE, 0.8);
     poly([A, B, C, D], CARD, LINE, 0.8);
-    const tint = hex6(r.tint), base = locked ? '#b9c0c6' : mix(tint, '#ffffff', 0.3), alt = locked ? '#c6ccd1' : mix(tint, '#ffffff', 0.42);
+    // City grid: asphalt everywhere, one paved block per plot (one building each), yellow lane lines between blocks
     const ix0 = l.x0 + 0.14, iy0 = l.y0 + 0.14, ix1 = l.x1 - 0.14, iy1 = l.y1 - 0.14;
-    diamond(ix0, iy0, ix1, iy1, 0, base);
-    for (let i = 0; i < r.slots; i++) {
-      const gx = l.ox + (i % r.cols), gy = l.oy + Math.floor(i / r.cols);
-      diamond(gx, gy, gx + 1, gy + 1, 0, (i % r.cols + Math.floor(i / r.cols)) % 2 ? alt : base);
+    diamond(ix0, iy0, ix1, iy1, 0, locked ? '#8d959d' : '#3b4656');
+    if (!locked) {
+      c.strokeStyle = '#e7c35a'; c.lineWidth = 1.4; c.setLineDash([6, 7]); c.beginPath();
+      for (let k = 1; k < l.cols; k++) { const a = P(l.ox + k, l.oy), b = P(l.ox + k, l.oy + l.rows); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+      for (let k = 1; k < l.rows; k++) { const a = P(l.ox, l.oy + k), b = P(l.ox + l.cols, l.oy + k); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+      c.stroke(); c.setLineDash([]);
     }
-    for (let k = r.slots; k < l.cols * l.rows; k++) { const gx = l.ox + (k % r.cols), gy = l.oy + Math.floor(k / r.cols); diamond(gx, gy, gx + 1, gy + 1, 0, base); }
+    for (let i = 0; i < l.cols * l.rows; i++) {
+      const gx = l.ox + (i % r.cols), gy = l.oy + Math.floor(i / r.cols), z = ZONE[i < r.slots ? plotKind(r.id, i) : 'industry'];
+      diamond(gx + 0.1, gy + 0.1, gx + 0.9, gy + 0.9, 0, locked ? '#b4bbc1' : '#c9c8c0', 'rgba(13,27,42,.28)', 0.8);
+      diamond(gx + 0.17, gy + 0.17, gx + 0.83, gy + 0.83, 0, locked ? '#aab2b8' : z.a);
+    }
   };
   function roadSeg(a, b) {
     const w = 0.36, horiz = a[1] === b[1], x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]), y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]);
@@ -414,7 +444,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     const t = reduce ? 0 : ts / 1000, now = Date.now();
     canvas.style.cursor = 'grab';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const g = ctx.createLinearGradient(0, 0, 0, vh); g.addColorStop(0, '#bfe3f2'); g.addColorStop(1, '#cfe7e0');
+    const g = ctx.createLinearGradient(0, 0, 0, vh); g.addColorStop(0, '#7fb0bd'); g.addColorStop(1, '#93bdb4');
     ctx.fillStyle = g; ctx.fillRect(0, 0, vw, vh);
     ctx.setTransform(cam.z * dpr, 0, 0, cam.z * dpr, (vw / 2 - cam.x * cam.z) * dpr, (vh / 2 - cam.y * cam.z) * dpr);
     c = ctx;
@@ -459,9 +489,12 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
       for (let i = 0; i < r.slots; i++) {
         if (taken.has(i)) continue;
         const gx = l.ox + (i % r.cols), gy = l.oy + Math.floor(i / r.cols);
-        diamond(gx + 0.1, gy + 0.1, gx + 0.9, gy + 0.9, 0, 'rgba(255,255,255,.5)');
-        c.setLineDash([5, 4]); diamond(gx + 0.1, gy + 0.1, gx + 0.9, gy + 0.9, 0, null, 'rgba(13,27,42,.34)', 1.2); c.setLineDash([]);
-        const [sx, sy] = P(gx + 0.5, gy + 0.5, 0); c.strokeStyle = 'rgba(13,27,42,.5)'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(sx - 5, sy); c.lineTo(sx + 5, sy); c.moveTo(sx, sy - 2.5); c.lineTo(sx, sy + 2.5); c.stroke();
+        const kind = plotKind(r.id, i), z = ZONE[kind];
+        diamond(gx + 0.1, gy + 0.1, gx + 0.9, gy + 0.9, 0, 'rgba(255,255,255,.35)');
+        c.setLineDash([5, 4]); diamond(gx + 0.1, gy + 0.1, gx + 0.9, gy + 0.9, 0, null, z.edge, 1.5); c.setLineDash([]);
+        zoneIcon(kind, gx, gy);
+        const [sx, sy] = P(gx + 0.86, gy + 0.14, 0); circle(sx, sy - 4, 5.5, z.edge);
+        c.strokeStyle = '#fff'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(sx - 3, sy - 4); c.lineTo(sx + 3, sy - 4); c.moveTo(sx, sy - 7); c.lineTo(sx, sy - 1); c.stroke();
       }
     }
     // locked wash
@@ -501,6 +534,16 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
       plaque(sx, sy, (locked ? '🔒 ' : '') + r.name, cam.z >= 0.4 || !world ? info : '', locked);
     }
     { const [px, py] = P(HUB.cx, HUB.h + LIP + 0.6, 0), [sx, sy] = S(px, py + SLAB); plaque(sx, sy, '📦 Warehouse', cam.z >= 0.4 ? 'all goods pass here' : '', false, true); }
+    if (cam.z >= 1.5) for (const r of REGIONS) {
+      if (lvl < r.unlock) continue;
+      const l = LAY[r.id], taken = new Set(objs.filter((o) => o.region === r.id).map((o) => o.slot));
+      for (let i = 0; i < r.slots; i++) {
+        if (taken.has(i)) continue;
+        const kind = plotKind(r.id, i), [sx, sy] = S(...P(l.ox + (i % r.cols) + 0.5, l.oy + Math.floor(i / r.cols) + 0.5, 0));
+        if (sx < -60 || sx > vw + 60 || sy < -40 || sy > vh + 40) continue;
+        lightChip(sx, sy + 30, PLOT_KINDS[kind].short.toUpperCase(), 9);
+      }
+    }
     if (cam.z >= 0.45) for (const o of objs) {
       if (lvl < REGION[o.region].unlock) continue;
       const [sx, sy] = S(...P(o.gx + 0.5, o.gy + 0.5, o.H + 6));
@@ -517,7 +560,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
       else if (st === 'blocked') { label = 'Needs inputs'; glyph = '!'; bg = '#fff'; }
       const compact = cam.z < 1.3;
       let y = sy;
-      if (!compact) y = chip(sx, y, `L${o.level}  ${SHORT[o.slug] ?? o.name}`) - 3;
+      if (!compact) { y = lightChip(sx, y, `LVL ${o.level}`, 10) - 1; y = lightChip(sx, y, (SHORT[o.slug] ?? o.name).toUpperCase(), 11.5) - 3; }
       else if (cam.z >= 0.7) { const [bx, by] = S(...P(o.gx + 0.86, o.gy + 0.86, 0)); levelDot(bx, by - 2, o.level); }
       if (label) {
         if (cam.z < 0.6) { ctx.beginPath(); ctx.arc(sx, y - 6 + bounce, 5, 0, TAU); ctx.fillStyle = bg; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.2; ctx.stroke(); }
@@ -542,6 +585,12 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     ctx.font = `700 10.5px ${FONT}`; const w = ctx.measureText(text).width + 14, h = 17, x = sx - w / 2, y = sy - h;
     rr(x, y, w, h, 8.5); ctx.fillStyle = 'rgba(13,27,42,.88)'; ctx.fill();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, sx, y + h / 2 + 0.5);
+    return y;
+  }
+  function lightChip(sx, sy, text, size) {
+    ctx.font = `600 ${size}px ${FONT}`; const w = ctx.measureText(text).width + 12, h = size + 8, x = sx - w / 2, y = sy - h;
+    rr(x, y, w, h, 5); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill();
+    ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, sx, y + h / 2 + 0.5);
     return y;
   }
   function levelDot(sx, sy, n) {
