@@ -39,8 +39,8 @@ export async function renderTutorial() {
     { t: 'Plant apples on a Map plot', done: orchard, href: '#/map/world' },
     { t: 'Wait for the harvest, then collect it', done: harvested },
     { t: 'Build a Grocery Store on a Map plot', done: storeBuilt, href: '#/map/world' },
-    { t: 'Put apples on sale (Retail > Stores)', done: listing, href: '#/retail/stores' },
-    { t: 'Make your first sale', done: false, href: '#/retail/stores' },
+    { t: 'Put apples on sale (tap your store on the Map)', done: listing, href: '#/map/world' },
+    { t: 'Make your first sale', done: false, href: '#/map/world' },
   ];
   const active = steps.findIndex((s) => !s.done);
   let action = '';

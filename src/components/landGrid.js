@@ -3,10 +3,11 @@ import { state } from '../core/state.js';
 import { toast } from './toast.js';
 import { ic } from '../config/icons.js';
 import { mountMapIso } from './mapIso.js';
-import { confirmDialog, busy, classifyError } from './ui.js';
+import { confirmDialog, busy, classifyError, statusChip } from './ui.js';
 import { esc } from '../core/escape.js';
 import { missingFor } from '../core/ops.js';
-import { qty } from '../core/format.js';
+import { qty, money2 } from '../core/format.js';
+import { MAX_PRICE_X, perMinute, demand, EMOJI as RETAIL_EMOJI } from './retailCore.js';
 import { REGIONS, REGION, BONUS_LABEL, landFee, PLOT_KINDS, plotKind, plotAllows, plotCounts } from '../config/regions.js';
 import { loadMissions, claimable, openMissions } from './missions.js';
 
@@ -64,7 +65,7 @@ function onPick(region, slot) {
   if (!state.company.tutorial_done) {
     if (region !== 'home') { toast('Finish the tutorial on Home Isle first.'); return; }
     if (ctx.hasOrchard && lvl < 1) { toast('Wait for your apples to grow, then collect them.'); return; }
-    if (ctx.hasStore) { toast('Open Retail > Stores and put your apples on sale.'); return; }
+    if (ctx.hasStore) { toast('Tap your Grocery Store on the map and put your apples on sale.'); return; }
     const need = lvl >= 1 ? 'shop' : 'farm';
     if (plotKind(region, slot) !== need) { toast(need === 'farm' ? 'Plant your orchard on a green farm plot 🌾.' : 'Build your Grocery Store on a shop plot 🛒 (the striped stalls).'); return; }
   }
@@ -77,13 +78,15 @@ async function fetchData() {
   const cols = 'id, slot, level, region_id, build_finish_at, upgrade_finish_at, upgrade_to, building_types(id, slug, name, category, build_cost, build_seconds)';
   let b = await supabase.from('buildings').select(cols).not('slot', 'is', null);
   if (b.error) b = await supabase.from('buildings').select('id, slot, level, building_types(id, slug, name, category, build_cost)').not('slot', 'is', null);   // migrations 005/006 missing
+  let rs = await supabase.from('resources').select('id, slug, name, base_price, retail_ok, retail_ref');
+  if (rs.error) rs = await supabase.from('resources').select('id, slug, name, base_price');   // migration 013 missing
   const [t, j, r, i] = await Promise.all([
     supabase.from('building_types').select('*').order('unlock_level').order('build_cost'),
     supabase.from('production_jobs').select('id, building_id, recipe_id, runs, finish_at').eq('collected', false),
     supabase.from('recipes').select('id, building_type_id, output_qty, duration_seconds, resources(name), recipe_inputs(qty, resource_id, resources(name))'),
     supabase.from('inventory').select('resource_id, quantity'),
   ]);
-  return { b: b.data ?? [], t: t.data ?? [], j: j.data ?? [], recipes: r.data ?? [], stock: Object.fromEntries((i.data ?? []).map((x) => [x.resource_id, Number(x.quantity)])) };
+  return { b: b.data ?? [], t: t.data ?? [], j: j.data ?? [], recipes: r.data ?? [], resources: rs.data ?? [], stock: Object.fromEntries((i.data ?? []).map((x) => [x.resource_id, Number(x.quantity)])) };
 }
 
 // What the map shows on every building: build / upgrade / ready / running / idle / blocked / passive (stores, no recipe).
@@ -117,10 +120,10 @@ export async function mountLandGrid() {
   }
   reload = () => { if (document.getElementById('map-stage')) mountLandGrid(); };
 
-  const { b, t, j, recipes, stock } = await dataP;
+  const { b, t, j, recipes, stock, resources } = await dataP;
   const jobOf = Object.fromEntries(j.map((x) => [x.building_id, x]));
   const bySlot = Object.fromEntries(b.map((x) => [`${x.region_id ?? 'home'}:${x.slot}`, x]));
-  ctx = { bySlot, types: t, jobOf, recipes, stock, jobs: j, hasOrchard: b.some((x) => x.building_types.slug === 'apple-orchard'),
+  ctx = { bySlot, types: t, jobOf, recipes, stock, resources, jobs: j, hasOrchard: b.some((x) => x.building_types.slug === 'apple-orchard'),
           hasStore: b.some((x) => x.building_types.slug === 'grocery-store') };
 
   if (!map) return fallback2D(stage);                           // no WebGL / three.js blocked
@@ -257,8 +260,9 @@ function openBuilding(x) {
     ${canStart ? `<div class="ps-prod"><div class="fld"><label for="ps-r">Recipe</label><select id="ps-r">${recipes.map((r) => `<option value="${r.id}">${esc(r.resources?.name)}</option>`).join('')}</select></div>
       <div class="fld"><label for="ps-n">Runs (1 to 20)</label><input id="ps-n" type="number" inputmode="numeric" min="1" max="20" step="1" value="1" /></div>
       <div class="flow" id="ps-flow"></div><p class="why" id="ps-why" hidden></p>
+      <a class="btn-ghost" href="#/marketplace/buy" id="ps-market" hidden>Buy missing inputs on the Market</a>
       <button class="btn" id="start">Start production</button></div>` : ''}
-    ${retail && !upBusy ? '<a class="btn" href="#/retail/stores">Open store</a>' : ''}
+    ${retail && !upBusy ? '<div class="stack" id="shelf"><p class="muted">Loading shelves…</p></div>' : ''}
     <p class="muted">${retail ? 'Sales speed' : 'Capacity'} ×${lvl}${lvl < MAX_LEVEL ? ` → ×${lvl + 1} after upgrade` : ''}</p>
     ${lvl >= MAX_LEVEL ? '<p class="muted">Maximum level reached.</p>'
       : upBusy ? '' : job ? '<p class="muted">Collect or finish production before upgrading.</p>'
@@ -278,16 +282,71 @@ function openBuilding(x) {
       const short = ins.filter((i) => i.have < i.need);
       m.querySelector('#ps-flow').innerHTML = (ins.length ? ins.map((i) => `<span class="res${i.have < i.need ? ' short' : ''}">${qty(i.need)} ${esc(i.name)} <small>(have ${qty(i.have)})</small></span>`).join('') : '<span class="res">No inputs</span>')
         + `<span class="arrow">→</span><span class="res">${dur(rc.duration_seconds * r)}</span><span class="arrow">→</span><span class="res"><b>${qty(rc.output_qty * lvl * r)} ${esc(rc.resources?.name)}</b></span>`;
-      const why = m.querySelector('#ps-why'), reason = !valid ? 'Enter a whole number of runs from 1 to 20.' : short.length ? `Not enough ${short.map((i) => i.name).join(', ')}. Buy or produce it first.` : '';
+      const why = m.querySelector('#ps-why'), reason = !valid ? 'Enter a whole number of runs from 1 to 20.' : short.length ? `Not enough ${short.map((i) => `${i.name} (need ${qty(i.need)}, have ${qty(i.have)})`).join(', ')}. Buy it on the Market or produce it first.` : '';
       why.hidden = !reason; why.textContent = reason; m.querySelector('#start').disabled = !!reason;
+      m.querySelector('#ps-market').hidden = !short.length;
     };
     paint(); box.addEventListener('input', paint);
   }
+
+
+  // ---- Store shelves (same server calls as Retail > Stores) ----
+  const prods = () => ctx.resources.filter((p) => p.retail_ok);
+  const drawShelf = async (sync) => {
+    const el = m.querySelector('#shelf'); if (!el) return;
+    if (sync) {
+      const s = await supabase.rpc('retail_sync');
+      if (Number(s.data?.sold) > 0) { toast(`Customers bought ${qty(s.data.sold)} items for ${money2(s.data.revenue)}`); window.dispatchEvent(new Event('hashchange')); }
+      const inv = await supabase.from('inventory').select('resource_id, quantity');
+      if (!inv.error) ctx.stock = Object.fromEntries(inv.data.map((r) => [r.resource_id, Number(r.quantity)]));
+    }
+    const { data: lst, error } = await supabase.from('store_listings').select('resource_id, price, sold_total, revenue_total').eq('building_id', x.id);
+    if (!m.isConnected) return;
+    if (error || !prods().length) { el.innerHTML = '<p class="muted">Store shelves are not installed yet. Run migration 013 in Supabase.</p>'; return; }
+    const free = prods().filter((p) => !lst.some((l) => l.resource_id === p.id));
+    const rows = lst.map((l) => {
+      const p = prods().find((q) => q.id === l.resource_id); if (!p) return '';
+      const ref = Number(p.retail_ref), price = Number(l.price), have = ctx.stock[p.id] ?? 0;
+      const chip = have < 1 ? statusChip('Out of stock', 'bad') : demand(price, ref) === 0 ? statusChip('Too expensive', 'warn') : statusChip(`≈ ${qty(perMinute(lvl, price, ref))}/min`, 'ok');
+      return `<div class="rt-row" data-r="${p.id}"><div class="rt-top"><b>${RETAIL_EMOJI[p.slug] ?? '📦'} ${esc(p.name)}</b>${chip}</div>
+        <div class="fld"><label for="sp-${p.id}">Price (reference ${money2(ref)})</label>
+          <input id="sp-${p.id}" type="number" inputmode="decimal" min="0.01" max="${(ref * MAX_PRICE_X).toFixed(2)}" step="0.01" value="${price.toFixed(2)}" /></div>
+        <dl class="sum"><div><dt>In warehouse</dt><dd class="num">${qty(have)}</dd></div><div><dt>Sold so far</dt><dd class="num">${qty(l.sold_total)} · ${money2(l.revenue_total)}</dd></div></dl>
+        ${have < 1 ? `<p class="why">⚠️ <span>No ${esc(p.name)} in your warehouse. Harvest some or buy it on the Market.</span></p>` : ''}
+        <div class="row end"><button class="btn-ghost" data-rm>Remove</button><button class="btn" data-save>Save price</button></div></div>`;
+    }).join('');
+    const add = free.length && lst.length < 4 ? `<div class="rt-add"><div class="fld"><label for="sh-add">Add a product</label>
+      <select id="sh-add">${free.map((p) => `<option value="${p.id}">${esc(p.name)} · ${qty(ctx.stock[p.id] ?? 0)} in stock</option>`).join('')}</select></div>
+      <button class="btn" data-add>Put on sale</button></div>` : '';
+    el.innerHTML = `<b>Shelves</b>${lst.length ? '' : '<p class="muted" style="margin:0">The shelves are empty. Pick a product to start selling.</p>'}${rows}${add}
+      <p class="muted" style="margin:0">Each product sells 4 items per minute per store level at the reference price. Lower prices sell faster; at double the reference price nobody buys. The store keeps selling while you are away.</p>`;
+  };
+  const shelfAction = (btn) => {
+    const row = btn.closest('[data-r]'), addBox = btn.closest('.rt-add'); let rpc, args, okMsg;
+    if (btn.hasAttribute('data-save') && row) {
+      const price = Number(row.querySelector('input').value), p = prods().find((q) => q.id === Number(row.dataset.r)), max = Number(p.retail_ref) * MAX_PRICE_X;
+      if (!(price > 0) || Math.abs(price * 100 - Math.round(price * 100)) > 1e-6) return toast('Enter a price above 0 with at most 2 decimals.', true);
+      if (price > max) return toast(`The highest price for ${p.name} is ${money2(max)}.`, true);
+      rpc = 'set_store_listing'; args = { p_building: x.id, p_resource: p.id, p_price: price }; okMsg = 'Price saved';
+    } else if (btn.hasAttribute('data-rm') && row) {
+      rpc = 'remove_store_listing'; args = { p_building: x.id, p_resource: Number(row.dataset.r) }; okMsg = 'Removed from the shelf';
+    } else if (btn.hasAttribute('data-add') && addBox) {
+      const p = prods().find((q) => q.id === Number(addBox.querySelector('select').value));
+      rpc = 'set_store_listing'; args = { p_building: x.id, p_resource: p.id, p_price: Number(p.retail_ref) }; okMsg = `${p.name} is on sale at ${money2(p.retail_ref)}`;
+    } else return;
+    busy(btn, async () => {
+      const { error } = await supabase.rpc(rpc, args);
+      if (error) { toast(classifyError(error).text, true); return; }
+      toast(okMsg); await drawShelf(false); window.dispatchEvent(new Event('hashchange'));
+    });
+  };
+  if (retail && !upBusy) drawShelf(true);
 
   m.onclick = async (e) => {
     const id = e.target.id;
     if (e.target === m || id === 'no' || e.target.closest('a')) return m.remove();
     const btn = e.target.closest('button'); if (!btn) return;
+    if (btn.closest('#shelf')) return shelfAction(btn);
     if (id === 'col') busy(btn, async () => {
       const { data, error } = await supabase.rpc('collect_production', { p_job: job.id });
       if (error) return toast(classifyError(error).text, true);
