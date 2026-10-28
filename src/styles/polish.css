@@ -218,3 +218,76 @@ input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba
 .fab, .tool { border-radius:8px; }
 .hud.idle, .rl { border-radius:6px; }
 .bl-label, .rinfo { border-radius:4px; }
+
+/* === TAMBAHAN UI TOPBAR (Versi Aman) === */
+
+/* Mengatur badge level dan teks persentase di bawah nama */
+.brand-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.lvl-badge {
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+
+.xp-text {
+  font-size: 0.7rem;
+  color: #aebfd0;
+  font-weight: 600;
+}
+
+/* Wadah untuk mata uang (Cash & Nexus) bertumpuk */
+.cur-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+  margin-left: 6px;
+  margin-right: 4px;
+}
+
+/* Menimpa style .cash bawaan agar muat berdampingan dengan Nexus */
+.cur-stack .cash, 
+.cur-stack .nexus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 86px;
+  text-decoration: none;
+  height: auto;
+  box-shadow: none;
+}
+
+.cur-stack .cash small, 
+.cur-stack .nexus small {
+  font-size: 0.55rem;
+  color: #8da2b5;
+  text-transform: uppercase;
+  margin: 0;
+  font-weight: 700;
+}
+
+.cur-stack .cash b, 
+.cur-stack .nexus b {
+  font-size: 0.75rem;
+  font-family: 'Space Grotesk', monospace;
+  margin: 0;
+}
+
+/* Warna spesifik */
+.cur-stack .cash b { color: #7fcf6f; } /* Hijau untuk cash */
+.cur-stack .nexus b { color: #4fb3e0; } /* Biru untuk Nexus */
