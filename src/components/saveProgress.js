@@ -7,8 +7,11 @@ export const openSaveProgress = () => openAuthPanel('signup');
 
 // Called on every page load. The server decides when a guest has reached a milestone
 // (see should_prompt_save in supabase/migrations/004_guest_flow.sql) and counts each prompt.
+let lastCheck = 0;
 export async function checkSavePrompt() {
   if (!state.company || !isGuest() || document.getElementById('auth-panel')) return;
+  if (Date.now() - lastCheck < 60000) return;   // not on every tab switch
+  lastCheck = Date.now();
   const { data } = await supabase.rpc('should_prompt_save');
   if (!data) return;
   await supabase.rpc('mark_save_prompted');

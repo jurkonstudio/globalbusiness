@@ -70,7 +70,7 @@ body[data-view="auth"] #app { padding-bottom:0; }
 /* ---- Bottom: floating pill dock ---- */
 #nav { position:fixed; z-index:25; left:50%; transform:translateX(-50%); bottom:calc(12px + env(safe-area-inset-bottom));
   display:flex; gap:4px; padding:6px; max-width:calc(100% - 20px); border-radius:999px;
-  background:rgba(13,27,42,.94); backdrop-filter:blur(10px); box-shadow:var(--shadow); }
+  background:rgba(13,27,42,.96); box-shadow:var(--shadow); }
 #nav:empty { display:none; }
 #nav a { display:flex; align-items:center; justify-content:center; gap:6px; height:46px; min-width:46px; padding:0 12px;
   border-radius:999px; color:#9fb2c6; font:600 .85rem var(--font-body); transition:background .2s, color .2s; }
@@ -84,7 +84,7 @@ body[data-view="auth"] #app { padding-bottom:0; }
 
 /* ---- Drawer: side panel ---- */
 #drawer { position:fixed; inset:0; z-index:40; display:none; }
-body.drawer-open #drawer { display:block; background:rgba(13,27,42,.5); backdrop-filter:blur(2px); }
+body.drawer-open #drawer { display:block; background:rgba(13,27,42,.5); }
 .drawer-panel { position:absolute; left:0; top:0; bottom:0; width:min(86%,340px); overflow-y:auto;
   padding:calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 16px);
   background:var(--ink); color:#fff; border-radius:0 26px 26px 0; animation:slide-in .22s ease-out; }

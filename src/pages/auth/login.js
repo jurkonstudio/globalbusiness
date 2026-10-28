@@ -4,6 +4,7 @@ export function render() {
   return `<section class="auth">
     <div class="card stack">
       <h1>Global Business</h1><h2>Log In</h2>
+      ${window.__gbNotice ? `<p class="muted">${window.__gbNotice}</p>` : ''}
       <input id="email" type="email" placeholder="Email" autocomplete="email" />
       <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
       <button class="btn" id="submit">Log In</button>

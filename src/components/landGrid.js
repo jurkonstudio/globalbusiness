@@ -25,24 +25,34 @@ function idleBox() {
   el.innerHTML = `Idle buildings: <b>${idle}</b><br>Next idle: <b>${t}</b>`;
 }
 
+// The 3D scene is created once and re-attached on every visit to the map (no WebGL restart, no re-download).
+let kept = null, ctx = null, lastSig = '';
+
+function onPick(slot) {
+  if (!ctx) return;
+  const x = ctx.bySlot[slot];
+  if (x) return openBuilding(x);
+  if (!state.company.tutorial_done && ctx.hasOrchard) { toast('Wait for your apples to grow first.'); return; }
+  choose(slot, ctx.types);
+}
+
 export async function mountLandGrid() {
   const stage = document.getElementById('map-stage');
   if (!stage) return;
+  const inline = stage.classList.contains('inline');
   idleBox();
   const dataP = Promise.all([
     supabase.from('buildings').select('id, slot, level, building_types(slug, name, category)').not('slot', 'is', null),
     supabase.from('building_types').select('*').order('unlock_level').order('build_cost'),
     supabase.from('production_jobs').select('building_id, finish_at').eq('collected', false),
   ]);
-  let ctx = null;
-  const onPick = (slot) => {
-    if (!ctx) return;
-    const x = ctx.bySlot[slot];
-    if (x) return openBuilding(x);
-    if (!state.company.tutorial_done && ctx.hasOrchard) { toast('Wait for your apples to grow first.'); return; }
-    choose(slot, ctx.types);
-  };
-  const map = await mountMap3D(stage, { slots: SLOTS, cols: COLS, onPick });
+
+  let map;
+  if (!inline && kept) { stage.replaceWith(kept.stage); map = kept.map; }
+  else {
+    map = await mountMap3D(stage, { slots: SLOTS, cols: COLS, onPick, keepAlive: !inline });
+    if (map && !inline) kept = { stage, map };
+  }
 
   const [b, t, j] = await dataP;
   const bySlot = Object.fromEntries((b.data ?? []).map((x) => [x.slot, x]));
@@ -50,10 +60,12 @@ export async function mountLandGrid() {
   ctx = { bySlot, types: t.data ?? [], hasOrchard: Object.values(bySlot).some((x) => x.building_types.slug === 'apple-orchard') };
 
   if (!map) return fallback2D(stage, ctx, jobOf, onPick);      // no WebGL / three.js blocked
-  map.setBuildings(Object.values(bySlot).map((x) => ({
+  const items = Object.values(bySlot).map((x) => ({
     slot: x.slot, level: x.level ?? 1, slug: x.building_types.slug, name: x.building_types.name,
     category: x.building_types.category, finishAt: jobOf[x.id]?.finish_at ?? null,
-  })));
+  }));
+  const sig = JSON.stringify(items);
+  if (inline || sig !== lastSig) { map.setBuildings(items); if (!inline) lastSig = sig; }   // skip rebuild when nothing changed
   document.getElementById('map-reset')?.addEventListener('click', () => map.resetView());
   setTimeout(() => document.getElementById('map-hint')?.classList.add('gone'), 5000);
 }

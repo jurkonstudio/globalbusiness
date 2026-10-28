@@ -44,7 +44,7 @@ table.tbl { width:100%; border-collapse:collapse; font-size:.88rem; }
 .tbl input { width:70px; padding:.3rem; }
 
 .modal { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1rem;
-  background:rgba(13,27,42,.55); backdrop-filter:blur(3px); }
+  background:rgba(13,27,42,.55); }
 .modal-box { width:100%; max-width:380px; box-shadow:var(--shadow); }
 .modal.sheet { align-items:flex-end; padding:0; }
 .modal.sheet .modal-box { max-width:none; border-radius:24px 24px 0 0; padding:1.2rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom));
@@ -67,3 +67,9 @@ table.tbl { width:100%; border-collapse:collapse; font-size:.88rem; }
 .globe.tall { height:60vh; min-height:340px; }
 .globe canvas { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
 .globe .hint { position:absolute; left:.8rem; bottom:.6rem; font-size:.7rem; color:#8fa6bf; pointer-events:none; }
+
+/* Page switch: short fade/slide; transform+opacity only (GPU friendly) */
+@keyframes page-in { from { opacity:0; transform:translateY(6px); } }
+body[data-view="page"] #app > * { animation:page-in .18s ease-out both; }
+#app { scroll-behavior:auto; -webkit-overflow-scrolling:touch; }
+@media (prefers-reduced-motion:reduce) { body[data-view="page"] #app > * { animation:none; } }

@@ -13,7 +13,7 @@ const COLORS = {
 // Deterministic pseudo-random so the island looks the same every visit.
 const rng = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
-export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
+export async function mountMap3D(stage, { slots = 24, cols = 6, onPick, keepAlive = false } = {}) {
   try { await loadThree(); } catch { return null; }
   const THREE = window.THREE;
   let renderer;
@@ -24,8 +24,10 @@ export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
   const W = cols * PITCH, D = rows * PITCH;
   const slotPos = (i) => new THREE.Vector3(((i % cols) - (cols - 1) / 2) * PITCH, 0, (Math.floor(i / cols) - (rows - 1) / 2) * PITCH);
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.autoUpdate = false;          // shadows are static; re-render them only while something changes
+  let shadowFrames = 3;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x000000, 0);
   stage.prepend(renderer.domElement);
@@ -179,6 +181,7 @@ export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
       labelLayer.appendChild(label);
       buildings.set(b.slot, { group: g, arrow, label, timer: label.firstChild, finish: b.finishAt ? new Date(b.finishAt) : null, born: performance.now(), pos: new THREE.Vector3(p.x, 1.25, p.z) });
     }
+    shadowFrames = 45;                            // covers the pop-in animation
     tickTimers();
   }
 
@@ -192,7 +195,7 @@ export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
       v.timer.classList.toggle('ready', v.ready);
     }
   }
-  const timerId = setInterval(() => { if (!stage.isConnected) clearInterval(timerId); else tickTimers(); }, 1000);
+  const timerId = setInterval(() => { if (stage.isConnected) tickTimers(); else if (!keepAlive) clearInterval(timerId); }, 1000);
 
   // ---- Camera controller (orbit + pinch + pan) ----
   const cam = { theta: 0.65, phi: 1.0, dist: 13.5, tx: 0, tz: 0 };
@@ -271,8 +274,13 @@ export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
 
   let last = performance.now();
   const v3 = new THREE.Vector3();
+  let frameNo = 0;
   function frameLoop(now) {
-    if (!stage.isConnected) { clearInterval(timerId); ro.disconnect(); renderer.dispose(); renderer.forceContextLoss?.(); return; }
+    if (!stage.isConnected) {
+      if (keepAlive) { last = now; setTimeout(() => requestAnimationFrame(frameLoop), 300); return; }   // parked while another tab is shown
+      clearInterval(timerId); ro.disconnect(); renderer.dispose(); renderer.forceContextLoss?.(); return;
+    }
+    frameNo++;
     const dt = Math.min((now - last) / 1000, 0.05); last = now;
     const k = 1 - Math.pow(0.0015, dt);                      // frame-rate independent damping
     for (const key of ['theta', 'phi', 'dist', 'tx', 'tz']) cam[key] += (goal[key] - cam[key]) * k;
@@ -283,9 +291,11 @@ export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
     camera.lookAt(cam.tx, 0, cam.tz);
 
     const t = now / 1000;
-    const pa = wGeo.attributes.position;
-    for (let i = 0; i < pa.count; i++) pa.setY(i, Math.sin(wBase[i * 3] * 0.35 + t * 0.9) * 0.05 + Math.cos(wBase[i * 3 + 2] * 0.3 + t * 0.7) * 0.05);
-    pa.needsUpdate = true; wGeo.computeVertexNormals();
+    if (frameNo % 2 === 0) {                                  // waves at half rate; flat shading needs no normals
+      const pa = wGeo.attributes.position;
+      for (let i = 0; i < pa.count; i++) pa.setY(i, Math.sin(wBase[i * 3] * 0.35 + t * 0.9) * 0.05 + Math.cos(wBase[i * 3 + 2] * 0.3 + t * 0.7) * 0.05);
+      pa.needsUpdate = true;
+    }
     clouds.forEach((c, i) => { c.position.x += dt * (0.25 + i * 0.05); if (c.position.x > 24) c.position.x = -24; });
     plus.forEach((p, i) => { p.position.y = 0.13 + Math.sin(t * 2 + i) * 0.015; });
     if (frame.visible) frame.material.color.setHex(Math.sin(t * 6) > 0 ? COLORS.brand : COLORS.gold);
@@ -301,6 +311,7 @@ export async function mountMap3D(stage, { slots = 24, cols = 6, onPick } = {}) {
       v.label.style.display = hide ? 'none' : '';
       if (!hide) v.label.style.transform = `translate(${(v3.x * hw + hw).toFixed(1)}px,${(-v3.y * hh + hh).toFixed(1)}px) translate(-50%,-100%)`;
     }
+    if (shadowFrames > 0) { renderer.shadowMap.needsUpdate = true; shadowFrames--; }
     renderer.render(scene, camera);
     requestAnimationFrame(frameLoop);
   }
