@@ -3,7 +3,7 @@
 A browser-based business and economy simulation game, inspired by *Sim Companies*.
 Build companies, produce goods, trade on the market, and grow your empire.
 
-> Status: early development. The map is an empty grid of placeholder slots.
+> Status: early development. The map is now a 3D island (session 1) with 24 land plots.
 
 ## Tech Stack
 - **Frontend:** HTML, CSS, vanilla JavaScript (ES modules), hosted on GitHub Pages

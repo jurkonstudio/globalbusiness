@@ -3,55 +3,72 @@ import { state, isGuest } from '../core/state.js';
 import { toast } from './toast.js';
 import { promptOnce } from './saveProgress.js';
 import { ic } from '../config/icons.js';
+import { mountMap3D } from './map3d.js';
 
-const SLOTS = 24;
+const SLOTS = 24, COLS = 6;
 const ICON = { agriculture: '🌳', utility: '⚡', extraction: '⛏️', construction: '🧱' };
 const money = (n) => '$' + Number(n).toLocaleString('en-US');
 
-const fmt = (s) => s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`
-  : s >= 60 ? `${Math.floor(s / 60)}m` : `${s}s`;
-
-// Placeholder 2D stage. A 3D scene can mount into #map-stage later and reuse mountLandGrid's data.
-export const landGridHtml = () => `<div id="map-stage"><div class="island"><div class="map-grid" id="land">Loading…</div></div></div>
-  <a class="idle-box" href="#/buildings/production" id="idle-box"></a>
-  <a class="fab" href="#/buildings/construction" aria-label="Build">${ic('build')}</a>`;
+// The 3D scene mounts into #map-stage. `inline` = embedded in a normal page (Land Slots), no HUD.
+export const landGridHtml = (inline = false) => `<div id="map-stage" class="map-stage${inline ? ' inline' : ''}">
+    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to rotate · pinch to zoom · tap a plot</div>'}</div>
+  ${inline ? '' : `<a class="hud idle" href="#/buildings/production" id="idle-box"></a>
+  <div class="hud tools">
+    <button class="tool" id="map-reset" aria-label="Reset view">${ic('globe')}</button>
+    <a class="fab" href="#/buildings/construction" aria-label="Build">${ic('build')}</a>
+  </div>`}`;
 
 function idleBox() {
+  const el = document.getElementById('idle-box');
+  if (!el) return;
   const { idle, nextIdle } = state.stats;
   const t = nextIdle ? nextIdle.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
-  document.getElementById('idle-box').innerHTML = `Idle buildings: ${idle}<br>Next idle: ${t}`;
+  el.innerHTML = `Idle buildings: <b>${idle}</b><br>Next idle: <b>${t}</b>`;
 }
 
 export async function mountLandGrid() {
-  const el = document.getElementById('land');
-  if (!el) return;
-  idleBox();
   const stage = document.getElementById('map-stage');
-  stage.scrollLeft = (stage.scrollWidth - stage.clientWidth) / 2;
-  const [b, t, j] = await Promise.all([
+  if (!stage) return;
+  idleBox();
+  const dataP = Promise.all([
     supabase.from('buildings').select('id, slot, level, building_types(slug, name, category)').not('slot', 'is', null),
     supabase.from('building_types').select('*').order('unlock_level').order('build_cost'),
     supabase.from('production_jobs').select('building_id, finish_at').eq('collected', false),
   ]);
+  let ctx = null;
+  const onPick = (slot) => {
+    if (!ctx) return;
+    const x = ctx.bySlot[slot];
+    if (x) return openBuilding(x);
+    if (!state.company.tutorial_done && ctx.hasOrchard) { toast('Wait for your apples to grow first.'); return; }
+    choose(slot, ctx.types);
+  };
+  const map = await mountMap3D(stage, { slots: SLOTS, cols: COLS, onPick });
+
+  const [b, t, j] = await dataP;
   const bySlot = Object.fromEntries((b.data ?? []).map((x) => [x.slot, x]));
   const jobOf = Object.fromEntries((j.data ?? []).map((x) => [x.building_id, x]));
-  const hasOrchard = Object.values(bySlot).some((x) => x.building_types.slug === 'apple-orchard');
+  ctx = { bySlot, types: t.data ?? [], hasOrchard: Object.values(bySlot).some((x) => x.building_types.slug === 'apple-orchard') };
+
+  if (!map) return fallback2D(stage, ctx, jobOf, onPick);      // no WebGL / three.js blocked
+  map.setBuildings(Object.values(bySlot).map((x) => ({
+    slot: x.slot, level: x.level ?? 1, slug: x.building_types.slug, name: x.building_types.name,
+    category: x.building_types.category, finishAt: jobOf[x.id]?.finish_at ?? null,
+  })));
+  document.getElementById('map-reset')?.addEventListener('click', () => map.resetView());
+  setTimeout(() => document.getElementById('map-hint')?.classList.add('gone'), 5000);
+}
+
+// Plain grid used only when WebGL is unavailable.
+function fallback2D(stage, ctx, jobOf, onPick) {
+  const el = document.getElementById('map-fallback');
+  el.hidden = false;
   el.innerHTML = Array.from({ length: SLOTS }, (_, i) => {
-    const x = bySlot[i];
-    if (!x) return `<button class="map-slot" data-slot="${i}" aria-label="Empty slot">+</button>`;
-    const left = jobOf[x.id] ? Math.ceil((new Date(jobOf[x.id].finish_at) - Date.now()) / 1000) : 0;
-    return `<button class="map-slot used" data-b="${i}">${ICON[x.building_types.category] ?? '🏭'}
-      ${jobOf[x.id] ? `<span class="bl-timer">${left > 0 ? fmt(left) : 'Ready'}</span>` : ''}
-      <span class="bl-label">${x.building_types.name}<small>LVL ${x.level ?? 1}</small></span></button>`;
+    const x = ctx.bySlot[i];
+    return x ? `<button class="map-slot used" data-slot="${i}">${ICON[x.building_types.category] ?? '🏭'}</button>`
+             : `<button class="map-slot" data-slot="${i}" aria-label="Empty plot">+</button>`;
   }).join('');
-  el.onclick = (e) => {
-    const used = e.target.closest('[data-b]');
-    if (used) return openBuilding(bySlot[used.dataset.b]);
-    const s = e.target.closest('[data-slot]');
-    if (!s) return;
-    if (!state.company.tutorial_done && hasOrchard) { toast('Wait for your apples to grow first.'); return; }
-    choose(Number(s.dataset.slot), t.data ?? []);
-  };
+  el.onclick = (e) => { const s = e.target.closest('[data-slot]'); if (s) onPick(Number(s.dataset.slot)); };
 }
 
 function openBuilding(x) {

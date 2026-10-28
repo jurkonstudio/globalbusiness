@@ -2,7 +2,7 @@
 const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
 let loading;
 
-function loadThree() {
+export function loadThree() {
   if (window.THREE) return Promise.resolve();
   loading ??= new Promise((resolve, reject) => {
     const s = document.createElement('script');

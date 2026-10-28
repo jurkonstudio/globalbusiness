@@ -9,21 +9,15 @@ export function renderTopbar() {
   const el = document.getElementById('topbar');
   const c = state.company;
   const xp = Number(c?.xp ?? 0), pct = xp % 100;
+  const phase = state.economy?.phase || 'normal';
   el.innerHTML = `
-    <button class="hamb" id="open-drawer" aria-label="Menu">${ic('menu')}</button>
-    ${c ? `<a class="avatar" href="#/headquarters/overview" aria-label="Company">${c.name.charAt(0).toUpperCase()}</a>
-      <a class="mini-chat" href="#/messages/inbox" aria-label="Messages">${ic('bubble')}</a>` : ''}
-    <span class="spacer"></span>
-    ${c ? `
-    <a class="bell" href="#/headquarters/notifications" aria-label="Notifications">${ic('bell')}<b>${state.alerts}</b></a>
-    <div class="pills">
-      <a class="pill cash" href="#/banking/account">${money(c.cash)}</a>
-      <div class="pill-row">
-        <a class="pill lvl" href="#/headquarters/statistics">${ic('star')}<b>${c.level}</b></a>
-        <a class="pill xp" href="#/headquarters/statistics" style="--p:${pct}%"><span>${xp} (${pct}%)</span></a>
-      </div>
-    </div>
-    <button class="emblem" id="open-economy" aria-label="Economy">${ic('globe')}</button>` : ''}`;
+    <button class="hamb" id="open-drawer" aria-label="Menu">${ic('menu')}${state.alerts ? '<i class="dot"></i>' : ''}</button>
+    ${c ? `<a class="brand" href="#/headquarters/overview" aria-label="Company">
+        <span class="mono">${c.name.charAt(0).toUpperCase()}</span>
+        <span class="who"><b>${c.name}</b><small>Level ${c.level} · ${pct}% to next</small></span></a>
+      <button class="phase" id="open-economy" data-p="${phase}" aria-label="Economy"><i></i><span>${cap(phase)}</span></button>
+      <a class="cash" href="#/banking/account"><small>Cash</small><b>${money(c.cash)}</b></a>
+      <span class="xp" style="--p:${pct}%"></span>` : '<span class="brand"></span>'}`;
   document.getElementById('open-drawer').onclick = toggleDrawer;
   document.getElementById('open-economy')?.addEventListener('click', openEconomy);
 }
