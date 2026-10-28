@@ -218,3 +218,86 @@ input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba
 .fab, .tool { border-radius:8px; }
 .hud.idle, .rl { border-radius:6px; }
 .bl-label, .rinfo { border-radius:4px; }
+
+/* === TAMBAHAN UI TOPBAR (Gem & Taller Header) === */
+
+/* Memperpanjang header ke bawah */
+#topbar {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  min-height: 80px; /* Memaksa header lebih tinggi */
+}
+
+/* Mengatur badge level dan teks persentase */
+.brand-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.lvl-badge {
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+
+.xp-text {
+  font-size: 0.7rem;
+  color: #aebfd0;
+  font-weight: 600;
+}
+
+/* Wadah mata uang bertumpuk */
+.cur-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Jarak antar kotak cash dan nexus */
+  align-items: flex-end;
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+/* Style kotak uang yang baru */
+.cur-stack .cur-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 3px 8px;
+  border-radius: 6px;
+  min-width: 95px;
+  text-decoration: none;
+  height: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cur-stack .cur-box small {
+  font-size: 0.6rem;
+  color: #8da2b5;
+  text-transform: uppercase;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.cur-stack .cur-box b {
+  font-size: 0.85rem;
+  font-family: 'Space Grotesk', monospace;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Warna spesifik */
+.cur-stack .cur-box.cash b { color: #7fcf6f; }
+.cur-stack .cur-box.nexus b { color: #4fb3e0; }
+
+/* Sembunyikan class .cash lama agar tidak dobel jika ada di main.css */
+#topbar .cash { display: none !important; }
