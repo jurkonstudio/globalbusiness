@@ -4,7 +4,8 @@ import { state } from '../../core/state.js';
 import { esc } from '../../core/escape.js';
 import { toast } from '../../components/toast.js';
 import { errorBlock, skeleton, busy, classifyError } from '../../components/ui.js';
-import { money2, qty as fq } from '../../core/format.js';
+import { money2, qty as fq } from '../../core/format.js';import { resIcon } from '../../components/resourceIcons.js';
+
 
 // Market panel: a resource grid by category, then a per-resource order list with a buy bar.
 // Layout only; icons are emoji and the rules stay on the server (buy_from_exchange).
@@ -87,7 +88,7 @@ function gridHtml() {
     const tiles = groups[cat].map((r) => {
       const os = ordersOf(r.id);
       const low = os[0] ? money2(os[0].price) : '—';
-      return `<button class="ex-tile" data-r="${r.id}" aria-label="${esc(r.name)}, lowest ask ${low}">${EMOJI[r.slug] ?? '📦'}<small>${low}</small></button>`;
+      return `<button class="ex-tile" data-r="${r.id}" aria-label="${esc(r.name)}, lowest ask ${low}">${resIcon(r.slug, 30)}<small>${low}</small></button>`;
     }).join('');
     return `<div class="ex-cat">${esc(CAT_LABEL[cat] ?? cat)}</div><div class="ex-grid">${tiles}</div>`;
   }).join('') || '<p class="muted">No resources are listed yet.</p>';
@@ -113,7 +114,7 @@ function detailHtml() {
     <div class="ex-head">
       <button class="ex-tile" style="width:auto;padding:6px 10px;font-size:14px" data-back>‹ Resources</button>
       <button class="ex-tile" style="width:auto;padding:4px 8px;font-size:16px" data-step="-1" aria-label="Previous resource">&lt;&lt;</button>
-      <span style="font-size:20px">${EMOJI[r.slug] ?? '📦'} <b>${esc(r.name)}</b></span>
+      <span style="font-size:20px;display:inline-flex;gap:6px;align-items:center">${resIcon(r.slug, 26)} <b>${esc(r.name)}</b></span>
       <button class="ex-tile" style="width:auto;padding:4px 8px;font-size:16px" data-step="1" aria-label="Next resource">&gt;&gt;</button>
     </div>
     <p class="muted" style="margin:0 0 8px">Last trade: <b>${last}</b> · ${orders.length} order${orders.length === 1 ? '' : 's'}</p>

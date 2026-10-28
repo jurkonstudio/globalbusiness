@@ -3,7 +3,8 @@ import { state } from '../../core/state.js';
 import { toast } from '../../components/toast.js';
 import { esc } from '../../core/escape.js';
 import { statusChip, skeleton, errorBlock, stateBlock, openDialog, busy, classifyError } from '../../components/ui.js';
-import { loadOps } from '../../core/ops.js';
+import { loadOps } from '../../core/ops.js';import { resIcon } from '../../components/resourceIcons.js';
+
 import { money2, compact, qty as fq } from '../../core/format.js';
 
 const EMOJI = { power: '⚡', water: '💧', seeds: '🌱', apples: '🍎', oranges: '🍊', grapes: '🍇', grain: '🌾',
@@ -56,7 +57,7 @@ export async function mount() {
     el.innerHTML = cats.map((c, n) => `<section class="wh-sec">
       <div class="wh-head"><h2>${esc(c)}</h2>${n === 0 ? `<button id="toggle" aria-pressed="${showAll}">${showAll ? 'Show less' : 'Show all'}</button>` : ''}</div>
       <div class="wh-row">${groups[c].map((x) => { const st = status(x); return `<button class="tile" data-id="${x.id}" aria-label="${esc(x.name)}, ${fq(stock[x.id] ?? 0)} in stock${st ? ', ' + st[0] : ''}">
-        <span class="ico" aria-hidden="true">${EMOJI[x.slug] ?? '📦'}</span><span class="pr">${money2(priceOf(x))}</span>
+        <span class="ico" aria-hidden="true">${resIcon(x.slug, 32)}</span><span class="pr">${money2(priceOf(x))}</span>
         <span class="qt">${compact(stock[x.id] ?? 0)}</span>${st ? `<span class="stt">${statusChip(st[0], st[1])}</span>` : ''}<span class="nm">${esc(x.name)}</span></button>`; }).join('')}</div>
       <div class="swipe" hidden><span>SWIPE</span></div></section>`).join('')
       + '<p class="honest">Status applies to resources your buildings use. <b>Low</b> means less than one production run needs. <b>Empty</b> means zero. Prices are what the NPC charges.</p>';
@@ -82,10 +83,10 @@ function sheet(x, stock, priceOf) {
   const buyPx = priceOf(x), sellPx = Number(x.base_price) * ratio;
   const d = openDialog({ title: x.name, sheet: true, body: `<h3>${esc(x.name)}</h3>
     <dl class="sum"><div><dt>In stock</dt><dd class="num">${fq(have)}</dd></div><div><dt>Cash</dt><dd class="num">${money2(cash)}</dd></div></dl>
-    ${x.npc_sells ? `<div class="stack"><b>Buy from NPC</b>
+    ${x.npc_sells && !state.company?.tutorial_done ? `<div class="stack"><b>Buy from NPC</b>
       <div class="fld"><label for="qty">Quantity (whole units)</label><input type="number" inputmode="numeric" min="1" step="1" value="10" id="qty" />
       <span class="hint">${money2(buyPx)} each</span><span class="err" id="qerr" role="alert"></span></div>
-      <button class="btn" id="buy">Buy</button></div>` : '<p class="muted">The NPC does not sell this. Produce it or trade it on the Market.</p>'}
+      <button class="btn" id="buy">Buy</button></div>` : (x.npc_sells ? '<p class="muted">NPC sales end after the tutorial. Buy on the Market.</p>' : '<p class="muted">The NPC does not sell this. Produce it or trade it on the Market.</p>')}
     ${x.retail_ok ? '<p class="muted">Best price: sell it in your <a class="tag" href="#/retail/stores">Grocery Store</a> (customers pay more than the NPC).</p>' : ''}
     <div class="stack"><b>Sell to NPC</b>
       <div class="fld"><label for="sqty">Quantity (up to ${fq(have)})</label><input type="number" inputmode="decimal" min="0.01" step="0.01" max="${have}" value="${have >= 1 ? Math.min(10, Math.floor(have)) : ''}" id="sqty" ${have <= 0 ? 'disabled' : ''} />
@@ -96,7 +97,7 @@ function sheet(x, stock, priceOf) {
 
   // Live totals on the buttons, with the reason shown when an action is not possible.
   const refresh = () => {
-    if (x.npc_sells) {
+    if (x.npc_sells && document.getElementById('buy')) {
       const n = Number($('#qty').value), ok = Number.isInteger(n) && n >= 1, cost = Math.round(buyPx * n * 100) / 100;
       const err = !ok ? 'Enter a whole number, 1 or more.' : cost > cash ? `Not enough cash: this costs ${money2(cost)}.` : '';
       $('#qerr').textContent = err; $('#qty').setAttribute('aria-invalid', String(!!err));

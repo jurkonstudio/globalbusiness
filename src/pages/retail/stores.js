@@ -5,7 +5,8 @@ import { toast } from '../../components/toast.js';
 import { esc } from '../../core/escape.js';
 import { statusChip, skeleton, errorBlock, stateBlock, busy, classifyError } from '../../components/ui.js';
 import { money2, qty, duration, clock } from '../../core/format.js';
-import { EMOJI, MAX_PRICE_X, perMinute, demand } from '../../components/retailCore.js';
+import { EMOJI, MAX_PRICE_X, perMinute, demand } from '../../components/retailCore.js';import { resIcon } from '../../components/resourceIcons.js';
+
 
 export function render() {
   return shell('Retail', 'Stores', `<div id="rt">${skeleton(2, 180)}</div>`);
@@ -16,7 +17,7 @@ async function load() {
   if (sync.error && /retail_sync/.test(sync.error.message)) return { missing: true };
   const [b, inv, res] = await Promise.all([
     supabase.from('buildings')
-      .select('id, level, region_id, slot, build_finish_at, upgrade_finish_at, upgrade_to, building_types!inner(slug, name), store_listings(resource_id, price, sold_total, revenue_total)')
+      .select('id, level, region_id, slot, build_finish_at, upgrade_finish_at, upgrade_to, building_types!inner(slug, name), store_listings(resource_id, price, sold_total, revenue_total, last_sold_at)')
       .eq('building_types.slug', 'grocery-store').order('created_at'),
     supabase.from('inventory').select('resource_id, quantity'),
     supabase.from('resources').select('id, slug, name, base_price, retail_ref').eq('retail_ok', true).order('name'),
@@ -68,13 +69,16 @@ export async function mount() {
       const p = d.products.find((q) => q.id === x.resource_id); if (!p) return '';
       const ref = Number(p.retail_ref), price = Number(x.price), have = d.stock[p.id] ?? 0, rate = perMinute(lvl, price, ref);
       const out = have < 1;
+      const perSec = rate / 60, nextMs = perSec > 0 ? new Date(x.last_sold_at).getTime() + 1000 / perSec : null;
+      const lifeSec = perSec > 0 ? have / perSec : null;
       return `<div class="rt-row" data-s="${s.id}" data-r="${p.id}">
-        <div class="rt-top"><b>${EMOJI[p.slug] ?? '📦'} ${esc(p.name)}</b>
+        <div class="rt-top"><b style="display:inline-flex;gap:6px;align-items:center">${resIcon(p.slug, 24)} ${esc(p.name)}</b>
           ${out ? statusChip('Out of stock', 'bad') : demand(price, ref) === 0 ? statusChip('Too expensive', 'warn') : statusChip(`≈ ${qty(rate)}/min`, 'ok')}</div>
         <div class="fld"><label for="p-${s.id}-${p.id}">Price (reference ${money2(ref)})</label>
           <input id="p-${s.id}-${p.id}" type="number" inputmode="decimal" min="0.01" max="${(ref * MAX_PRICE_X).toFixed(2)}" step="0.01" value="${price.toFixed(2)}" /></div>
         <dl class="sum"><div><dt>In warehouse</dt><dd class="num">${qty(have)}</dd></div>
           <div><dt>Sold so far</dt><dd class="num">${qty(x.sold_total)} · ${money2(x.revenue_total)}</dd></div></dl>
+        ${!out && perSec > 0 ? `<p class="muted" style="margin:4px 0">Next sale in <b>${duration(Math.max(0, (nextMs - Date.now()) / 1000))}</b> · at this rate the stock lasts about <b>${duration(lifeSec)}</b></p>` : ''}
         ${out ? `<p class="why">${'⚠️'} <span>No ${esc(p.name)} in your warehouse. <a class="tag" href="#/buildings/production">Produce some</a> or <a class="tag" href="#/marketplace/buy">buy on the Market</a>.</span></p>` : ''}
         <div class="row end"><button class="btn-ghost" data-rm>Remove</button><button class="btn" data-save>Save price</button></div></div>`;
     }).join('');
