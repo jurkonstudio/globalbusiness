@@ -12,13 +12,16 @@ export const TABS = [
   { id: 'warehouse', title: 'Warehouse', icon: 'warehouse', to: '#/warehouse/inventory' },
   { id: 'search',    title: 'Search',    icon: 'search',    to: '#/search/companies' },
   { id: 'chat',      title: 'Chat',      icon: 'chat',      to: '#/messages/inbox' },
-  { id: 'exchange',  title: 'Exchange',  icon: 'exchange',  to: '#/marketplace/buy' },
+  { id: 'exchange',  title: 'Market',    icon: 'exchange',  to: '#/marketplace/buy' },
 ];
 
 export const HUBS = {
-  map: { modules: ['map', 'buildings'], items: [] },
+  // No chip row on the world map itself (full-bleed); on every other map or building page the chips show.
+  map: { modules: ['map', 'buildings'], items: [
+    { icon: 'map',   title: 'Map',       match: ['map/*'] },
+    { icon: 'build', title: 'Buildings', match: ['buildings/*'] },
+  ] },
   warehouse: { items: [
-    { icon: 'chart',    title: 'Statistics',   match: ['headquarters/statistics'] },
     { icon: 'warehouse',title: 'Inventory',    match: ['warehouse/inventory'] },
     { icon: 'contract', title: 'Contracts',    match: ['contracts/*'] },
     { icon: 'doc',      title: 'Transactions', match: ['warehouse/transactions'] },
@@ -38,12 +41,13 @@ export const HUBS = {
     { icon: 'exchange', title: 'Trades',    match: ['exchange/trades'] },
     { icon: 'chart',    title: 'Prices',    match: ['exchange/price-charts', 'marketplace/price-history'] },
   ] },
-  // Opened from the avatar (top-left). Not a bottom tab.
+  // Opened from the company name (top-left). Not a bottom tab.
   company: { items: [
     { icon: 'hq',     title: 'Overview',  match: ['headquarters/overview'] },
+    { icon: 'chart',  title: 'Statistics',match: ['headquarters/statistics'] },
+    { icon: 'wallet', title: 'Finance',   match: ['banking/*'] },
     { icon: 'exec',   title: 'Executives',match: ['executives/*'] },
     { icon: 'store',  title: 'Retail',    match: ['retail/*'] },
-    { icon: 'bank',   title: 'Banking',   match: ['banking/*'] },
     { icon: 'trophy', title: 'Ranking',   match: ['ranking/*'] },
     { icon: 'bell',   title: 'Alerts',    match: ['headquarters/notifications'] },
   ] },
@@ -57,16 +61,16 @@ for (const h of Object.values(HUBS)) {
 }
 
 export const DRAWER = [
-  { title: 'About',            to: '#/menu/about' },
-  { title: 'Library',          to: '#/menu/library' },
-  { title: 'Encyclopedia',     to: '#/encyclopedia/resources' },
-  { title: 'Referral program', to: '#/menu/referral' },
-  { title: 'Creators club',    to: '#/menu/creators-club' },
-  { title: 'Achievements',     to: '#/menu/achievements' },
-  { title: 'Notes',            to: '#/menu/notes' },
-  { title: 'Redeem code',      to: '#/menu/redeem-code' },
-  { title: 'Realms',           to: '#/menu/realms' },
-  { title: 'Settings',         to: '#/settings/profile' },
+  { icon: 'info', title: 'About',            to: '#/menu/about' },
+  { icon: 'book', title: 'Library',          to: '#/menu/library' },
+  { icon: 'doc', title: 'Encyclopedia',     to: '#/encyclopedia/resources' },
+  { icon: 'gift', title: 'Referral program', to: '#/menu/referral' },
+  { icon: 'star', title: 'Creators club',    to: '#/menu/creators-club' },
+  { icon: 'trophy', title: 'Achievements',     to: '#/menu/achievements' },
+  { icon: 'note', title: 'Notes',            to: '#/menu/notes' },
+  { icon: 'key', title: 'Redeem code',      to: '#/menu/redeem-code' },
+  { icon: 'globe', title: 'Realms',           to: '#/menu/realms' },
+  { icon: 'cog', title: 'Settings',         to: '#/settings/profile' },
 ];
 
 // Where does a route live? -> { hub, item, tabs }

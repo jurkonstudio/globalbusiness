@@ -12,17 +12,18 @@
   <link rel="stylesheet" href="src/styles/ui.css" />
   <link rel="stylesheet" href="src/styles/game.css" />
   <link rel="stylesheet" href="src/styles/tutorial.css" />
+  <link rel="stylesheet" href="src/styles/polish.css" />
   <script type="importmap">
     { "imports": { "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.4" } }
   </script>
 </head>
 <body>
   <header id="topbar"></header>
-  <div id="subbar"></div>
+  <div id="subbar" role="navigation" aria-label="Section"></div>
   <div id="stage">
     <main id="app"></main>
   </div>
-  <nav id="nav"></nav>
+  <nav id="nav" aria-label="Main"></nav>
   <div id="drawer"></div>
   <script type="module" src="src/main.js"></script>
 </body>

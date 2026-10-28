@@ -1,5 +1,8 @@
 import { route } from './core/router.js';
 import { supabase } from './core/supabase.js';
+import { initModalA11y } from './components/ui.js';
+
+initModalA11y();
 
 window.addEventListener('hashchange', route);
 route();

@@ -6,6 +6,7 @@ import { renderTopbar, clearTopbar } from '../components/topbar.js';
 import { renderBottomNav, renderSubbar, renderDrawer, closeDrawer, clearChrome } from '../components/nav.js';
 import { renderTutorial, mountTutorial } from '../components/tutorial.js';
 import { checkSavePrompt } from '../components/saveProgress.js';
+import { errorBlock } from '../components/ui.js';
 
 const app = () => document.getElementById('app');
 const FRESH_MS = 20000;          // company/economy/tutorial data is reused for this long between page switches
@@ -14,8 +15,8 @@ let tut = { at: 0, html: '' };
 const keys = { top: '', drawer: '', nav: '', sub: '' };   // chrome is only re-rendered when its inputs change
 
 function renderTabs(mod, sub) {
-  return `<div class="tabs">${mod.subs.map((s) =>
-    `<a href="#/${mod.id}/${s.id}" class="${s.id === sub ? 'active' : ''}">${s.title}</a>`).join('')}</div>`;
+  return `<nav class="tabs" aria-label="${mod.title} pages">${mod.subs.map((s) =>
+    `<a href="#/${mod.id}/${s.id}" class="${s.id === sub ? 'active' : ''}"${s.id === sub ? ' aria-current="page"' : ''}>${s.title}</a>`).join('')}</nav>`;
 }
 
 // New visitors become guests automatically and go straight into the game.
@@ -54,7 +55,7 @@ function paintChrome(where) {
   if (state.company) {
     const nk = where.hub + '|' + state.unread;
     if (nk !== keys.nav) { keys.nav = nk; renderBottomNav(where.hub); }
-    const sk = where.hub + '|' + where.item;
+    const sk = where.hub + '|' + where.item + '|' + document.body.dataset.view;
     if (sk !== keys.sub) { keys.sub = sk; renderSubbar(where.hub, where.item); }
   } else if (keys.nav || keys.sub) {
     keys.nav = keys.sub = '';
@@ -132,15 +133,23 @@ export async function route() {
   paintChrome(where);
   checkSavePrompt();   // throttled; guests get the save-progress prompt at server-defined milestones
 
-  const showTabs = where.tabs && !mod.hideTabs && mod.subs.length > 1;
+  const isWorld = mod.id === 'map' && sub.id === 'world';
+  const showTabs = where.tabs && !mod.hideTabs && !isWorld && mod.subs.length > 1;
+  document.title = `${sub.title} · ${mod.title} · Global Business`;
   const [tutorial, page] = await Promise.all([
     tutorialHtml(forced || userChanged),
     import(`../pages/${mod.id}/${sub.id}.js`).catch(() => null),
   ]);
   if (stale()) return;
-  app().innerHTML = page
-    ? tutorial + (showTabs ? renderTabs(mod, sub.id) : '') + page.render()
-    : '<div class="page"><div class="empty">Could not load this page. Check your connection and try again.</div></div>';
+  let html;
+  try {
+    html = page ? tutorial + (showTabs ? renderTabs(mod, sub.id) : '') + page.render()
+      : `<div class="page">${errorBlock('Check your connection and try again.')}</div>`;
+  } catch (err) {
+    console.error(err);
+    html = `<div class="page">${errorBlock('Something went wrong while drawing this page.')}</div>`;
+  }
+  app().innerHTML = html;
   app().scrollTop = 0;
   mountTutorial();
   page?.mount?.();
@@ -172,3 +181,6 @@ document.addEventListener('pointerdown', (e) => {
   const a = e.target.closest?.('a[href^="#/"]');
   if (a) warm(a.getAttribute('href'));
 }, { passive: true });
+
+// "Try again" buttons rendered by errorBlock() re-run the current route.
+document.addEventListener('click', (e) => { if (e.target.closest?.('[data-retry]')) route(); });

@@ -31,3 +31,21 @@ const P = {
 
 export const ic = (name, cls = '') =>
   `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] ?? P.globe}</svg>`;
+
+// Phase 2 additions (status + drawer icons)
+Object.assign(P, {
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  alert: '<path d="M12 3 2.5 20h19z"/><path d="M12 10v5M12 17.5v.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  x: '<path d="m6 6 12 12M18 6 6 18"/>',
+  up: '<path d="M12 20V5m-6 6 6-6 6 6"/>',
+  cog: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  book: '<path d="M5 4h9a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4z"/><path d="M5 16a4 4 0 0 1 4-4h9"/>',
+  gift: '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M3 9h18M12 9v11M12 9c-3 0-4-4-1.5-4S12 9 12 9zm0 0c3 0 4-4 1.5-4S12 9 12 9z"/>',
+  note: '<path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h4"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-4 3.2-6 6.5-6s5.700 2 6.500 6"/><path d="M16 5a3.500 3.500 0 0 1 0 7M18 14c2 .8 3.200 2.700 3.500 6"/>',
+  wallet: '<path d="M4 7h15a1 1 0 0 1 1 1v11H5a1 1 0 0 1-1-1z"/><path d="M4 7V6a2 2 0 0 1 2-2h11"/><circle cx="16" cy="13.500" r="1.200"/>',
+});

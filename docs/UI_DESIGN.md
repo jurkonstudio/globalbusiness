@@ -24,3 +24,19 @@ Falls back to a plain 2D grid if WebGL is unavailable.
 Locked islands are greyed with a lock tag. Dashed sea lanes link islands; ships sail the unlocked ones.
 Lighting follows the device clock (dawn, day, dusk, night with lamps and stars); there is no manual time control.
 Floating timers appear only on construction sites, upgrading buildings, and apple orchards.
+
+# Phase 2 (polish and gameplay interface)
+
+Shared building blocks (all new code uses them; older pages keep working):
+- `src/core/format.js`: one source for money, quantities, durations, dates. Headline cash shows cents; aggregates show whole dollars.
+- `src/components/ui.js`: `statusChip` (icon + text, never colour alone), `metric`, `stateBlock`, `errorBlock`, `skeleton`, `progressBar` (real timestamps only), `busy` (blocks double taps), `classifyError` (network / validation / transaction), `openDialog`, `confirmDialog`, and `initModalA11y` (gives every existing modal dialog semantics, Escape and focus handling).
+- `src/components/ledger.js`: the cash ledger view shared by Warehouse, Finance, Statistics and the dashboard.
+- `src/components/market.js`: client-side mirrors of the server's market rules, for instant feedback only.
+- `src/core/ops.js`: reads buildings, jobs, recipes and stock, and derives each building's state (build, upgrade, ready, running, blocked, idle, passive).
+- `src/styles/polish.css`: loaded last. Fixes the `.chip`/`.badge` collisions between main.css and game.css.
+
+Rules the UI follows:
+- Cash is never mixed with asset value; cash flow is never called profit; no trend is drawn without history.
+- Stock status: "Low" means less than one production run needs at any building you own; "Empty" means zero. Only shown for resources your buildings consume.
+- Toasts appear at the top so they never cover the dock or sheet buttons.
+- Navigation: Map hub now lists Map + Buildings; Company hub lists Overview, Statistics, Finance, Executives, Retail, Ranking, Alerts; the bottom tab "Exchange" is labelled "Market".

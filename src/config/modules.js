@@ -9,7 +9,7 @@ export const MODULES = [
   { id: 'executives', title: 'Executives', subs: [ { id: 'roster', title: 'Roster' }, { id: 'hire', title: 'Hire' }, { id: 'assignments', title: 'Assignments' }, ] },
   { id: 'research', title: 'Research', subs: [ { id: 'tree', title: 'Tree' }, { id: 'active', title: 'Active' }, { id: 'completed', title: 'Completed' }, ] },
   { id: 'retail', title: 'Retail', subs: [ { id: 'stores', title: 'Stores' }, { id: 'pricing', title: 'Pricing' }, { id: 'sales-reports', title: 'Sales Reports' }, ] },
-  { id: 'banking', title: 'Banking', subs: [ { id: 'account', title: 'Account' }, { id: 'loans', title: 'Loans' }, { id: 'transactions', title: 'Transactions' }, ] },
+  { id: 'banking', title: 'Finance', subs: [ { id: 'account', title: 'Account' }, { id: 'loans', title: 'Loans' }, { id: 'transactions', title: 'Cash ledger' }, ] },
   { id: 'map', title: 'Map', subs: [ { id: 'world', title: 'World' }, { id: 'regions', title: 'Regions' }, { id: 'land-slots', title: 'Land Slots' }, ] },
   { id: 'encyclopedia', title: 'Encyclopedia', subs: [ { id: 'resources', title: 'Resources' }, { id: 'buildings-info', title: 'Buildings Info' }, { id: 'recipes-info', title: 'Recipes Info' }, ] },
   { id: 'ranking', title: 'Ranking', subs: [ { id: 'companies', title: 'Companies' }, { id: 'players', title: 'Players' }, ] },
