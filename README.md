@@ -22,8 +22,10 @@ global-business/
 │   ├── config/        # supabase config, module list
 │   ├── core/          # router, supabase client
 │   ├── components/    # shared UI
-│   ├── styles/
+│   ├── styles/        # theme.css is the visual layer, loaded last
+│   ├── assets/        # textures/ (map + UI tiles), icons/
 │   └── pages/<module>/<section>.js
+├── tools/             # gen-textures.py regenerates src/assets/textures
 ├── supabase/
 │   ├── migrations/    # 001_init.sql ... 012_hardening.sql, run in numeric order
 │   ├── ops/           # read-only SQL for checks and backups (not migrations)

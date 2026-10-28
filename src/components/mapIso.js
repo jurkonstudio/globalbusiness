@@ -114,6 +114,13 @@ function tree(x, y, s, fruit, glow) {
 }
 const pad = (o, fill = '#e6e1d0') => diamond(o.gx + 0.12, o.gy + 0.12, o.gx + 0.88, o.gy + 0.88, 0, fill, 'rgba(13,27,42,.2)', 1);
 
+// ---------- Textures: seamless PNGs in src/assets/textures (made by tools/gen-textures.py) ----------
+// Images are shared by every map instance. A pattern is only used once its image has loaded;
+// until then (or if a file is missing) the flat colours below are drawn, so the map never breaks.
+const TEX_SIZE = 256;                                  // px per tile in the texture files
+const texURL = (name) => new URL(`../assets/textures/${name}.png`, import.meta.url).href;
+const ZONE_TEX = { farm: 'grass', shop: 'paving', industry: 'concrete' };
+
 // ---------- Plot zones: farm / shop / industry ----------
 const ZONE = {
   farm:     { a: '#a5d46f', b: '#93c75c', edge: '#4f8f3c' },
@@ -267,6 +274,13 @@ function flag(o) {
   c.strokeStyle = INK2; c.lineWidth = 1.3; c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx, sy - 16); c.stroke();
   c.fillStyle = GOLD; c.beginPath(); c.moveTo(sx, sy - 16); c.lineTo(sx + 10, sy - 13); c.lineTo(sx, sy - 9); c.closePath(); c.fill();
 }
+function contactShadow(o) {
+  const [sx, sy] = P(o.gx + 0.5, o.gy + 0.5, 0), rx = (o.status === 'build' ? 26 : 30) * o.hf;
+  c.save(); c.translate(sx + 3, sy + 1); c.scale(1, 0.5);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, rx);
+  g.addColorStop(0, 'rgba(13,27,42,.36)'); g.addColorStop(0.6, 'rgba(13,27,42,.14)'); g.addColorStop(1, 'rgba(13,27,42,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(0, 0, rx, 0, TAU); c.fill(); c.restore();
+}
 function drawBuilding(o, t) {
   if (o.status === 'build') { scaffold(o, o.progress, false, t); return; }
   (DRAW[o.slug] ?? dGeneric)(o, t);
@@ -332,6 +346,22 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
   let fit = 0.3;
 
   const seaWaves = Array.from({ length: 90 }, (_, i) => { const r1 = Math.sin(i * 12.9898) * 43758.5453, r2 = Math.sin(i * 78.233) * 12345.678; return { x: minX + (r1 - Math.floor(r1)) * bw, y: minY + (r2 - Math.floor(r2)) * bh, ph: i }; });
+  // Patterns are per canvas (createPattern is bound to the context). Their transform maps the texture onto the
+  // isometric ground, so grain runs along the tiles instead of sliding across them.
+  const pats = {};
+  function pat(name) {
+    if (pats[name] !== undefined) return pats[name];
+    pats[name] = null;
+    const img = new Image();
+    img.onload = () => {
+      const p = ctx.createPattern(img, 'repeat');
+      if (p && p.setTransform) p.setTransform(new DOMMatrix([HW / TEX_SIZE, HH / TEX_SIZE, -HW / TEX_SIZE, HH / TEX_SIZE, 0, 0]));
+      pats[name] = p || null; dirty = true;
+    };
+    img.onerror = () => { pats[name] = null; };
+    img.src = texURL(name);
+    return null;
+  }
   const ships = [{ x: -14, y: 16.5, dir: 'x', ph: 0, v: 0.55, a: -14, b: 20 }, { x: -4.5, y: 6, dir: 'y', ph: 2, v: 0.4, a: 5, b: 17 }];
 
   // ---------- sizing / camera ----------
@@ -400,7 +430,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     poly([A, B, C, D], CARD, LINE, 0.8);
     // City grid: asphalt everywhere, one paved block per plot (one building each), yellow lane lines between blocks
     const ix0 = l.x0 + 0.14, iy0 = l.y0 + 0.14, ix1 = l.x1 - 0.14, iy1 = l.y1 - 0.14;
-    diamond(ix0, iy0, ix1, iy1, 0, locked ? '#8d959d' : '#3b4656');
+    diamond(ix0, iy0, ix1, iy1, 0, locked ? '#8d959d' : (pat('asphalt') ?? '#3b4656'));
     if (!locked) {
       c.strokeStyle = '#e7c35a'; c.lineWidth = 1.4; c.setLineDash([6, 7]); c.beginPath();
       for (let k = 1; k < l.cols; k++) { const a = P(l.ox + k, l.oy), b = P(l.ox + k, l.oy + l.rows); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
@@ -408,15 +438,15 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
       c.stroke(); c.setLineDash([]);
     }
     for (let i = 0; i < l.cols * l.rows; i++) {
-      const gx = l.ox + (i % r.cols), gy = l.oy + Math.floor(i / r.cols), z = ZONE[i < r.slots ? plotKind(r.id, i) : 'industry'];
+      const gx = l.ox + (i % r.cols), gy = l.oy + Math.floor(i / r.cols), kind = i < r.slots ? plotKind(r.id, i) : 'industry', z = ZONE[kind];
       diamond(gx + 0.1, gy + 0.1, gx + 0.9, gy + 0.9, 0, locked ? '#b4bbc1' : '#c9c8c0', 'rgba(13,27,42,.28)', 0.8);
-      diamond(gx + 0.17, gy + 0.17, gx + 0.83, gy + 0.83, 0, locked ? '#aab2b8' : z.a);
+      diamond(gx + 0.17, gy + 0.17, gx + 0.83, gy + 0.83, 0, locked ? '#aab2b8' : (pat(ZONE_TEX[kind]) ?? z.a));
     }
   };
   function roadSeg(a, b) {
     const w = 0.36, horiz = a[1] === b[1], x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]), y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]);
     const dims = horiz ? [x0, a[1] - w, x1, a[1] + w] : [a[0] - w, y0, a[0] + w, y1];
-    box(...dims, -6, 0.6, { top: '#3b4656', l: '#9a9a8c', r: '#7c7c70' });
+    box(...dims, -6, 0.6, { top: pat('asphalt') ?? '#3b4656', l: '#9a9a8c', r: '#7c7c70' });
     c.strokeStyle = '#e7c35a'; c.lineWidth = 1.6; c.setLineDash([7, 8]); c.beginPath();
     const p0 = horiz ? P(x0, a[1], 0.6) : P(a[0], y0, 0.6), p1 = horiz ? P(x1, a[1], 0.6) : P(a[0], y1, 0.6);
     c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.stroke(); c.setLineDash([]);
@@ -428,7 +458,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     poly([D, C, [C[0], C[1] + SLAB], [D[0], D[1] + SLAB]], '#9fb0bd', LINE, 0.8);
     poly([B, C, [C[0], C[1] + SLAB], [B[0], B[1] + SLAB]], '#7d8fa0', LINE, 0.8);
     poly([A, B, C, D], CARD, LINE, 0.8);
-    diamond(s.x0 + 0.14, s.y0 + 0.14, s.x1 - 0.14, s.y1 - 0.14, 0, '#dfe6eb');
+    diamond(s.x0 + 0.14, s.y0 + 0.14, s.x1 - 0.14, s.y1 - 0.14, 0, pat('paving') ?? '#dfe6eb');
     for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) diamond(i, j, i + 1, j + 1, 0, '#d2dbe2');
   }
   function drawHub() {
@@ -451,6 +481,8 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
 
     // sea: iso grid + sparkles
     const wl = toWorld(0, 0), wr = toWorld(vw, vh);
+    const wp = pat('water');
+    if (wp) { c.globalAlpha = 0.55; c.fillStyle = wp; c.fillRect(wl[0], wl[1], wr[0] - wl[0], wr[1] - wl[1]); c.globalAlpha = 1; }
     const gmin = [(wl[0] / HW + wl[1] / HH) / 2, (wl[1] / HH - wl[0] / HW) / 2];
     c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 1 / cam.z * 1.1; c.beginPath();
     const corners = [toWorld(0, 0), toWorld(vw, 0), toWorld(0, vh), toWorld(vw, vh)].map((p) => [(p[0] / HW + p[1] / HH) / 2, (p[1] / HH - p[0] / HW) / 2]);
@@ -499,6 +531,9 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     }
     // locked wash
     for (const r of REGIONS) if (lvl < r.unlock) { const l = LAY[r.id]; diamond(l.x0, l.y0, l.x1, l.y1, 0, 'rgba(110,120,130,.34)'); }
+
+    // contact shadows on the ground (soft, offset to the lower right, light comes from the upper left)
+    for (const o of objs) if (lvl >= REGION[o.region].unlock) contactShadow(o);
 
     // depth sorted things
     const things = [];

@@ -40,3 +40,15 @@ Rules the UI follows:
 - Stock status: "Low" means less than one production run needs at any building you own; "Empty" means zero. Only shown for resources your buildings consume.
 - Toasts appear at the top so they never cover the dock or sheet buttons.
 - Navigation: Map hub now lists Map + Buildings; Company hub lists Overview, Statistics, Finance, Executives, Retail, Ranking, Alerts; the bottom tab "Exchange" is labelled "Market".
+
+# Visual refresh v2 (realistic assets and comfort)
+
+Goal: the game should look like a real place to run a business, and be comfortable to look at for long sessions.
+
+- **Assets** (`src/assets/`), all original and generated, so the project stays MIT-clean:
+  - `textures/*.png`: seamless 256 px tiles. `grass` (farm plots), `paving` (shop plots, warehouse plaza), `concrete` (industry plots), `asphalt` (city grid and roads), `soil`, `earth` (cliff strata), `water` (sea), `paper-grain` (UI background, overlay blend).
+  - `icons/app-icon.svg`: favicon and home-screen icon.
+  - Regenerate with `python3 tools/gen-textures.py` (needs Pillow and numpy). Edit the palettes in the script, not the PNGs.
+- **Map** (`components/mapIso.js`): ground, roads and the sea use the textures as canvas patterns, transformed onto the isometric grid so grain follows the tiles. Buildings get a soft contact shadow so they sit on the ground. Every texture falls back to the old flat colour until its image loads, or if the file is missing.
+- **UI** (`styles/theme.css`, loaded last): warmer sea-mist paper surfaces, layered elevation tokens (`--e1` to `--e3`), tactile buttons with a clear pressed state, frosted-glass HUD panels so the island shows through, calmer tables, dimmed and blurred modals, and reduced-motion support. Page code is unchanged; the look comes from tokens and selectors.
+- **Rules kept:** 44 px touch targets, visible focus, AA text contrast, status never by colour alone.

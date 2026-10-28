@@ -1,0 +1,207 @@
+/* Global Business · "Atlas" visual theme (v2)
+   Loaded LAST, so it overrides main/ui/game/polish without touching page code.
+   Goals: a warm, natural paper-and-sea look that matches the 3D-style island map,
+   clear depth (soft layered shadows instead of hard outlines), calmer text,
+   and comfortable touch targets for long play sessions.
+   Palette rule: each colour is also used on the map (grass, paving, asphalt, sea). */
+
+:root {
+  /* surfaces: sea-mist paper, not cold blue-grey */
+  --paper:  #eef1ec;
+  --paper2: #e1e7e0;
+  --card:   #fffefb;
+  --line:   #d6dcd4;
+  --line2:  #c3cbc1;
+
+  /* ink and text: AA contrast on every surface */
+  --ink:  #14202e;
+  --ink2: #1c2c40;
+  --ink3: #2c3f57;
+  --text:  #1b2530;
+  --muted: #56616d;
+
+  /* brand: sea blue, grass green, sun gold, brick red for danger */
+  --brand:  #1d6aa8;
+  --brand2: #2a8a55;
+  --gold:   #f0b43a;
+  --danger: #b93a2d;
+  --teal:   #1f8c86;
+
+  --r:    12px;
+  --r-sm: 9px;
+  --r-lg: 18px;
+
+  /* layered elevation: a soft ambient shadow plus a tight contact shadow */
+  --e1: 0 1px 1px rgba(20,32,46,.06), 0 1px 2px rgba(20,32,46,.06);
+  --e2: 0 2px 4px rgba(20,32,46,.05), 0 8px 20px -6px rgba(20,32,46,.16);
+  --e3: 0 4px 8px rgba(20,32,46,.08), 0 18px 36px -10px rgba(20,32,46,.28);
+  --shadow: var(--e2);
+
+  --glass: rgba(255,254,249,.86);
+  --glass-dark: rgba(20,32,46,.78);
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+
+/* ---- Base type and page ---- */
+html, body {
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+/* paper grain under everything: subtle, tiles seamlessly, costs one small image */
+body {
+  background-color: var(--paper);
+  background-image: url('../assets/textures/paper-grain.png');
+  background-size: 256px 256px;
+  background-blend-mode: overlay;
+}
+body[data-view="map"] { background-color: #dfe8e4; }
+body[data-view="auth"] { background-color: var(--ink); background-image: none; }
+
+h1, h2, h3, .page-head h1 { letter-spacing: -.012em; color: var(--ink); }
+h1, h2, h3 { font-weight: 700; }
+::selection { background: rgba(29,106,168,.22); }
+
+/* ---- Top bar and sub-nav ---- */
+#topbar {
+  background: linear-gradient(180deg, var(--ink2), var(--ink));
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 4px 14px -6px rgba(10,18,28,.55);
+}
+#subbar {
+  background: var(--glass);
+  backdrop-filter: saturate(1.2) blur(10px);
+  -webkit-backdrop-filter: saturate(1.2) blur(10px);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset;
+}
+#subbar .chip.active, #subbar .chip[aria-current="page"] { color: var(--brand); }
+
+/* ---- Bottom dock ---- */
+#nav {
+  background: linear-gradient(180deg, var(--ink2), var(--ink));
+  border-top: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 -6px 18px -8px rgba(10,18,28,.5);
+}
+#nav a { color: #9bb0c4; transition: background-color .2s var(--ease), color .2s var(--ease), transform .15s var(--ease); }
+#nav a:hover { color: #fff; }
+#nav a:active { transform: scale(.97); }
+#nav a.active { background: rgba(255,255,255,.1); color: #fff; box-shadow: inset 0 -3px 0 var(--gold); }
+#nav a .lbl { font-weight: 600; letter-spacing: .01em; }
+
+/* ---- Cards and metrics: depth without heavy borders ---- */
+.card, .metric {
+  background: var(--card);
+  border: 1px solid rgba(20,32,46,.08);
+  border-radius: var(--r);
+  box-shadow: var(--e1);
+  transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+}
+.card { padding: 1.05rem 1.1rem; }
+.card h3 { color: var(--muted); letter-spacing: .08em; }
+.metric { padding: .8rem .95rem; }
+a.metric:hover { box-shadow: var(--e2); }
+.mt-v { color: var(--ink); }
+.mt-l { color: var(--muted); }
+
+/* ---- Buttons: tactile, with a clear pressed state ---- */
+.btn {
+  background: linear-gradient(180deg, #2a7bbf, var(--brand));
+  color: #fff;
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: .72rem 1.15rem;
+  font-weight: 700;
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 2px 0 #134b78, 0 6px 14px -6px rgba(29,106,168,.55);
+  transition: transform .12s var(--ease), box-shadow .12s var(--ease), filter .2s;
+}
+.btn:hover { filter: brightness(1.05); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 0 0 #134b78, 0 2px 6px -4px rgba(29,106,168,.6); }
+.btn.danger {
+  background: linear-gradient(180deg, #cc4a3c, var(--danger));
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 2px 0 #7e261c, 0 6px 14px -6px rgba(185,58,45,.55);
+}
+.btn-ghost {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  box-shadow: var(--e1);
+  transition: background-color .15s, border-color .15s, transform .12s var(--ease);
+}
+.btn-ghost:hover { background: #f6f8f4; border-color: var(--muted); }
+.btn-ghost:active { transform: translateY(1px); }
+.btn:disabled, .btn[disabled] { opacity: .5; box-shadow: none; transform: none; filter: none; }
+
+/* ---- Tabs and chips ---- */
+.tabs a { border-radius: 999px; }
+#subbar .chip {
+  border-radius: 10px 10px 0 0;   /* square bottom keeps the active underline straight */
+  transition: background-color .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
+}
+.tabs a { border-color: var(--line2); box-shadow: var(--e1); }
+.tabs a.active { background: var(--ink); border-color: var(--ink); box-shadow: var(--e2); }
+.tabs a:not(.active):hover { color: var(--text); border-color: var(--muted); }
+
+/* ---- Map HUD: frosted panels so the island stays visible behind them ---- */
+.rinfo, .hud.idle, .tool, .chip, .map-hint {
+  backdrop-filter: blur(8px) saturate(1.15);
+  -webkit-backdrop-filter: blur(8px) saturate(1.15);
+}
+.rinfo { background: var(--glass-dark); box-shadow: var(--e2); line-height: 1.35; }
+.hud.idle {
+  background: var(--glass);
+  color: var(--text);
+  box-shadow: var(--e2);
+  border: 1px solid rgba(20,32,46,.06);
+}
+.tool {
+  background: var(--glass);
+  color: var(--ink);
+  border: 1px solid rgba(20,32,46,.06);
+  box-shadow: var(--e2);
+  transition: transform .12s var(--ease), background-color .2s;
+}
+.tool:hover { background: #fff; }
+.tool:active { transform: scale(.94); }
+.fab {
+  background: linear-gradient(180deg, #2a7bbf, var(--brand));
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #134b78, 0 10px 18px -8px rgba(29,106,168,.7);
+  transition: transform .12s var(--ease);
+}
+.fab:active { transform: translateY(2px); box-shadow: 0 1px 0 #134b78; }
+.chip { background: var(--glass); color: var(--ink); box-shadow: var(--e1); }
+.chip.on { background: var(--ink); color: #fff; }
+.map-hint { background: var(--glass-dark); color: #fff; box-shadow: var(--e1); }
+
+/* ---- Modals and sheets: dim the world, keep the sheet readable ---- */
+.modal { background: rgba(14,24,36,.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.modal-box { border-radius: var(--r-lg); box-shadow: var(--e3); }
+.modal.sheet .modal-box { border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px -12px rgba(14,24,36,.35); }
+#drawer { backdrop-filter: blur(2px); }
+
+/* ---- Tables: readable rows ---- */
+.tbl { border-collapse: separate; border-spacing: 0; }
+.tbl th { color: var(--muted); font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
+.tbl tbody tr:nth-child(even) td { background: rgba(20,32,46,.025); }
+.tbl tbody tr:hover td { background: rgba(29,106,168,.06); }
+
+/* ---- Toasts: a clean pill with depth ---- */
+#toasts .toast { background: var(--ink); color: #fff; box-shadow: var(--e3); border: 0; }
+
+/* ---- Focus: visible, never hidden by a colour alone ---- */
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
+.btn:focus-visible { outline-color: var(--gold); }
+
+/* ---- Comfort: no motion for people who ask for less ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---- Small phones: keep the chrome from crowding the map ---- */
+@media (max-width: 380px) {
+  .card { padding: .9rem; }
+  .hud.rbar { right: 64px; }
+}
