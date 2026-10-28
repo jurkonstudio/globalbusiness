@@ -13,7 +13,7 @@ export async function loadCompany() {
   const [c, e, b, j] = await Promise.all([
     supabase.from('companies').select('*').maybeSingle(),
     supabase.from('economy').select('*').maybeSingle(),
-    supabase.from('buildings').select('id, slot, build_finish_at, upgrade_finish_at, building_types(category)').then((r) => r.error ? supabase.from('buildings').select('id, slot') : r),
+    supabase.from('buildings').select('id, slot, parcel_id, build_finish_at, upgrade_finish_at, building_types(category)').then((r) => r.error ? supabase.from('buildings').select('id, slot') : r),
     supabase.from('production_jobs').select('building_id, finish_at').eq('collected', false),
   ]);
   state.company = c.data;
@@ -26,7 +26,7 @@ export async function loadCompany() {
   const ready = (j.data ?? []).filter((x) => new Date(x.finish_at) <= now).length;
   state.stats = {
     total: buildings.length,
-    slotsUsed: buildings.filter((x) => x.slot !== null).length,
+    slotsUsed: buildings.filter((x) => x.slot !== null || x.parcel_id).length,
     idle: buildings.filter((x) => x.building_types?.category !== 'retail' && !busy.has(x.id) && !(x.build_finish_at && new Date(x.build_finish_at) > now) && !x.upgrade_finish_at).length,
     nextIdle: running[0] ? new Date(running[0].finish_at) : null,
     ready,

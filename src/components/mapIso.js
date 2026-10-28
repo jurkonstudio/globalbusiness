@@ -9,7 +9,7 @@
 //   * status     -> pill above the building: Collect / Start / timer / Needs inputs
 //   * supply line-> animated dashes while a building is producing, a truck drives the trunk road
 //   * tap        -> building (production, upgrade, demolish sheet) or empty plot (build sheet)
-import { REGIONS, REGION, PLOT_KINDS, plotKind } from '../config/regions.js';
+import { REGIONS, REGION, PLOT_KINDS, plotKind, parcelKey } from '../config/regions.js';
 
 const HW = 36, HH = 18;          // half tile: 2:1 isometric
 const SLAB = 14;                 // island thickness in px
@@ -405,13 +405,16 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     items = list; objs = [];
     for (const b of list) {
       const l = LAY[b.region ?? 'home'], r = REGION[b.region ?? 'home']; if (!l || b.slot >= r.slots) continue;
-      const gx = l.ox + (b.slot % r.cols), gy = l.oy + Math.floor(b.slot / r.cols);
+      // A whole-parcel building spans all its cells (b.cells) and is centred on them.
+      const cells = b.cells?.length ? b.cells : [b.slot], cols = cells.map((s) => s % r.cols);
+      const minC = Math.min(...cols), w = Math.max(...cols) - minC + 1, row = Math.floor(b.slot / r.cols);
+      const ax = l.ox + minC, gx = ax + w / 2 - 0.5, gy = l.oy + row;
       const lv = Math.max(1, b.level ?? 1), hf = 1 + (lv - 1) * 0.15, H = (HT[b.slug] ?? 30) * hf;
       const retail = b.category === 'retail', [axis, v] = l.line, bx = gx + 0.5, by = gy + 0.5;
       const first = axis === 'y' ? [bx, v] : [v, by];
       let route = [[bx, by], first, ...l.path]; if (retail) route = route.slice().reverse();
       const finish = b.finishAt ? new Date(b.finishAt).getTime() : 0, start = b.startAt ? new Date(b.startAt).getTime() : 0;
-      objs.push({ ...b, region: b.region ?? 'home', gx, gy, level: lv, hf, H, route, retail, finish, start, key: gx + gy + 1, done: false, progress: 0 });
+      objs.push({ ...b, region: b.region ?? 'home', ax, aw: w, gx, gy, level: lv, hf, H, route, retail, finish, start, key: gx + gy + 1, done: false, progress: 0 });
     }
     objs.sort((a, b) => a.key - b.key);
     dirty = true;
@@ -432,9 +435,13 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     const ix0 = l.x0 + 0.14, iy0 = l.y0 + 0.14, ix1 = l.x1 - 0.14, iy1 = l.y1 - 0.14;
     diamond(ix0, iy0, ix1, iy1, 0, locked ? '#8d959d' : (pat('asphalt') ?? '#3b4656'));
     if (!locked) {
+      // Lanes run only along parcel edges: sub-plots of one parcel share a block, parcels are separated by lanes.
       c.strokeStyle = '#e7c35a'; c.lineWidth = 1.4; c.setLineDash([6, 7]); c.beginPath();
-      for (let k = 1; k < l.cols; k++) { const a = P(l.ox + k, l.oy), b = P(l.ox + k, l.oy + l.rows); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
-      for (let k = 1; k < l.rows; k++) { const a = P(l.ox, l.oy + k), b = P(l.ox + l.cols, l.oy + k); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+      for (let i = 0; i < r.slots; i++) {
+        const col = i % r.cols, row = Math.floor(i / r.cols), key = parcelKey(r.id, i);
+        if (col > 0 && parcelKey(r.id, i - 1) !== key) { const a = P(l.ox + col, l.oy + row), b = P(l.ox + col, l.oy + row + 1); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+        if (row > 0 && parcelKey(r.id, i - r.cols) !== key) { const a = P(l.ox + col, l.oy + row), b = P(l.ox + col + 1, l.oy + row); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }
+      }
       c.stroke(); c.setLineDash([]);
     }
     for (let i = 0; i < l.cols * l.rows; i++) {
@@ -517,7 +524,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     // empty plots
     for (const r of REGIONS) {
       if (lvl < r.unlock) continue;
-      const l = LAY[r.id], taken = new Set(objs.filter((o) => o.region === r.id).map((o) => o.slot));
+      const l = LAY[r.id], taken = new Set(objs.filter((o) => o.region === r.id).flatMap((o) => o.cells?.length ? o.cells : [o.slot]));
       for (let i = 0; i < r.slots; i++) {
         if (taken.has(i)) continue;
         const gx = l.ox + (i % r.cols), gy = l.oy + Math.floor(i / r.cols);
@@ -571,7 +578,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     { const [px, py] = P(HUB.cx, HUB.h + LIP + 0.6, 0), [sx, sy] = S(px, py + SLAB); plaque(sx, sy, '📦 Warehouse', cam.z >= 0.4 ? 'all goods pass here' : '', false, true); }
     if (cam.z >= 1.5) for (const r of REGIONS) {
       if (lvl < r.unlock) continue;
-      const l = LAY[r.id], taken = new Set(objs.filter((o) => o.region === r.id).map((o) => o.slot));
+      const l = LAY[r.id], taken = new Set(objs.filter((o) => o.region === r.id).flatMap((o) => o.cells?.length ? o.cells : [o.slot]));
       for (let i = 0; i < r.slots; i++) {
         if (taken.has(i)) continue;
         const kind = plotKind(r.id, i), [sx, sy] = S(...P(l.ox + (i % r.cols) + 0.5, l.oy + Math.floor(i / r.cols) + 0.5, 0));
@@ -652,7 +659,7 @@ export async function mountMapIso(stage, { level = 0, onPick, onRegion, onTimerD
     const [wx, wy] = toWorld(sx, sy);
     if (inHull([P(1, 3), P(3, 3), P(3, 1), P(3, 1, 44), P(1, 1, 44), P(1, 3, 44)], wx, wy)) return { hub: true };
     for (let i = objs.length - 1; i >= 0; i--) {
-      const o = objs[i], x0 = o.gx + 0.08, x1 = o.gx + 0.92, y0 = o.gy + 0.08, y1 = o.gy + 0.92, h = o.H + 6;
+      const o = objs[i], x0 = o.ax + 0.08, x1 = o.ax + o.aw - 0.08, y0 = o.gy + 0.08, y1 = o.gy + 0.92, h = o.H + 6;
       if (inHull([P(x0, y1), P(x1, y1), P(x1, y0), P(x1, y0, h), P(x0, y0, h), P(x0, y1, h)], wx, wy)) return { o };
     }
     const gx = (wx / HW + wy / HH) / 2, gy = (wy / HH - wx / HW) / 2;

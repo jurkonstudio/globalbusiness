@@ -133,5 +133,21 @@ end $$;
 grant execute on function build_on_parcel(text, int, int, text) to authenticated;
 revoke execute on function build_on_parcel(text, int, int, text) from public, anon;
 
+<<<<<<< HEAD
+=======
+-- ===== 5) Tutorial: plant the first orchard on a parcel and start growing apples =====
+create or replace function plant_apples_on_parcel(p_parcel_index int, p_sub int)
+returns timestamptz language plpgsql security definer set search_path = public as $$
+declare t building_types%rowtype; rid int; bid uuid;
+begin
+  select * into t from building_types where slug = 'apple-orchard';
+  select id into rid from recipes where building_type_id = t.id limit 1;
+  bid := build_on_parcel('apple-orchard', p_parcel_index, p_sub, 'home');
+  return start_production(bid, rid, 1);   -- fails (and rolls back) without seeds and water
+end $$;
+grant execute on function plant_apples_on_parcel(int, int) to authenticated;
+revoke execute on function plant_apples_on_parcel(int, int) from public, anon;
+
+>>>>>>> ac9c40e (Realistic resource icons and parcel-based land)
 -- After the app uses build_on_parcel, stop the slot-based path:
 -- revoke execute on function build_building(text, int, text) from authenticated;

@@ -9,11 +9,11 @@ import { missingFor } from '../core/ops.js';
 import { qty, money2 } from '../core/format.js';
 import { MAX_PRICE_X, perMinute, demand } from './retailCore.js';
 import { resIcon } from './resourceIcons.js';
-import { REGIONS, REGION, BONUS_LABEL, landFee, PLOT_KINDS, plotKind, plotAllows, plotCounts } from '../config/regions.js';
+import { REGIONS, REGION, BONUS_LABEL, landFee, PLOT_KINDS, plotKind, plotAllows, plotCounts, parcelOfCell, parcelCells } from '../config/regions.js';
 import { loadMissions, claimable, openMissions } from './missions.js';
 import { openQuick, closeQuick } from './mapQuick.js';
 
-const ICON = { agriculture: '🌳', utility: '⚡', extraction: '⛏️', construction: '🧱', retail: '🛒' };
+const ICON = { agriculture: '🌳', livestock: '🐄', utility: '⚡', extraction: '⛏️', construction: '🧱', retail: '🛒' };
 const money = (n) => '$' + Number(n).toLocaleString('en-US');
 const dur = (s) => s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : s >= 60 ? `${Math.floor(s / 60)}m` : `${s}s`;
 const MAX_LEVEL = 6;
@@ -78,9 +78,11 @@ function onPick(region, slot) {
 // Every piece of progress lives in Supabase (finish_at timestamps). The map only displays it.
 async function fetchData() {
   await supabase.rpc('sync_progress');            // settle upgrades that finished while the player was away
-  const cols = 'id, slot, level, region_id, build_finish_at, upgrade_finish_at, upgrade_to, building_types(id, slug, name, category, build_cost, build_seconds)';
-  let b = await supabase.from('buildings').select(cols).not('slot', 'is', null);
-  if (b.error) b = await supabase.from('buildings').select('id, slot, level, building_types(id, slug, name, category, build_cost)').not('slot', 'is', null);   // migrations 005/006 missing
+  const cols = 'id, slot, parcel_id, sub_plot_index, level, region_id, build_finish_at, upgrade_finish_at, upgrade_to, building_types(id, slug, name, category, build_cost, build_seconds)';
+  let b = await supabase.from('buildings').select(cols);
+  if (b.error) b = await supabase.from('buildings').select('id, slot, level, building_types(id, slug, name, category, build_cost)');   // migrations 005/006/020 missing
+  let pc = await supabase.from('parcels').select('id, parcel_index, region_id');
+  if (pc.error) pc = { data: [] };   // migration 020 not run yet
   let rs = await supabase.from('resources').select('id, slug, name, base_price, retail_ok, retail_ref');
   if (rs.error) rs = await supabase.from('resources').select('id, slug, name, base_price');   // migration 013 missing
   const [t, j, r, i] = await Promise.all([
@@ -89,7 +91,7 @@ async function fetchData() {
     supabase.from('recipes').select('id, building_type_id, output_qty, duration_seconds, resources(name), recipe_inputs(qty, resource_id, resources(name))'),
     supabase.from('inventory').select('resource_id, quantity'),
   ]);
-  return { b: b.data ?? [], t: t.data ?? [], j: j.data ?? [], recipes: r.data ?? [], resources: rs.data ?? [], stock: Object.fromEntries((i.data ?? []).map((x) => [x.resource_id, Number(x.quantity)])) };
+  return { b: b.data ?? [], parcels: pc.data ?? [], t: t.data ?? [], j: j.data ?? [], recipes: r.data ?? [], resources: rs.data ?? [], stock: Object.fromEntries((i.data ?? []).map((x) => [x.resource_id, Number(x.quantity)])) };
 }
 
 // What the map shows on every building: build / upgrade / ready / running / idle / blocked / passive (stores, no recipe).
@@ -131,16 +133,31 @@ export async function mountLandGrid() {
   }
   reload = () => { if (document.getElementById('map-stage')) mountLandGrid(); };
 
-  const { b, t, j, recipes, stock, resources } = await dataP;
+  const { b: rows, parcels, t, j, recipes, stock, resources } = await dataP;
   const jobOf = Object.fromEntries(j.map((x) => [x.building_id, x]));
-  const bySlot = Object.fromEntries(b.map((x) => [`${x.region_id ?? 'home'}:${x.slot}`, x]));
-  ctx = { bySlot, types: t, jobOf, recipes, stock, resources, jobs: j, hasOrchard: b.some((x) => x.building_types.slug === 'apple-orchard'),
-          hasStore: b.some((x) => x.building_types.slug === 'grocery-store') };
+  // Place each building on its grid cells. Parcel buildings use parcel + sub-plot (or the whole parcel);
+  // older buildings keep their slot.
+  const parcelById = Object.fromEntries(parcels.map((p) => [p.id, p]));
+  const placed = rows.flatMap((x) => {
+    const p = x.parcel_id ? parcelById[x.parcel_id] : null;
+    if (p) {
+      const all = parcelCells(p.region_id, p.parcel_index) ?? [];
+      const whole = x.sub_plot_index == null;
+      const cells = whole ? all : [all[x.sub_plot_index]];
+      return cells.length && cells[0] != null ? [{ x, region: p.region_id, slot: cells[0], cells, whole }] : [];
+    }
+    return x.slot != null ? [{ x, region: x.region_id ?? 'home', slot: x.slot, cells: [x.slot], whole: false }] : [];
+  });
+  const bySlot = {};
+  for (const { x, region, cells } of placed) for (const s of cells) bySlot[`${region}:${s}`] = x;
+  ctx = { bySlot, types: t, jobOf, recipes, stock, resources, jobs: j, parcels,
+          hasOrchard: rows.some((x) => x.building_types.slug === 'apple-orchard'),
+          hasStore: rows.some((x) => x.building_types.slug === 'grocery-store') };
 
   if (!map) return fallback2D(stage);                           // no WebGL / three.js blocked
   map.setLevel(state.company.level);
-  const items = b.map((x) => ({
-    region: x.region_id ?? 'home', slot: x.slot, level: x.level ?? 1, slug: x.building_types.slug, name: x.building_types.name,
+  const items = placed.map(({ x, region, slot, cells, whole }) => ({
+    region, slot, cells, whole, level: x.level ?? 1, slug: x.building_types.slug, name: x.building_types.name,
     category: x.building_types.category, ...statusOf(x, jobOf, recipes, stock),
     flow: x.building_types.category === 'retail' ? !(x.build_finish_at && new Date(x.build_finish_at) > Date.now()) : !!jobOf[x.id],
   }));
@@ -384,8 +401,8 @@ function openBuilding(x) {
   };
 }
 
-const CAT_LABEL = { agriculture: '🌾 Farm', retail: '🛒 Retail', utility: '⚡ Utility', extraction: '⛏️ Mining', construction: '🧱 Industry' };
-const CAT_ORDER = ['agriculture', 'retail', 'utility', 'extraction', 'construction'];
+const CAT_LABEL = { agriculture: '🌾 Farm', livestock: '🐄 Livestock', retail: '🛒 Retail', utility: '⚡ Utility', extraction: '⛏️ Mining', construction: '🧱 Industry' };
+const CAT_ORDER = ['agriculture', 'livestock', 'retail', 'utility', 'extraction', 'construction'];
 const TYPE_EMOJI = { 'apple-orchard': '🍎', plantation: '🌾', 'water-reservoir': '💧', 'power-plant': '⚡', mine: '⛏️', quarry: '🪨', 'brick-factory': '🏭', 'grocery-store': '🛒' };
 
 // Build sheet: category tabs (Farm, Retail, ...) and one card per building. During the tutorial only the next
@@ -394,6 +411,9 @@ function choose(region, slot, types) {
   const tutorial = !state.company.tutorial_done, r = REGION[region], lvl = state.company.level;
   const orchardDone = tutorial && lvl >= 1;
   const kind = plotKind(region, slot), zone = PLOT_KINDS[kind];
+  const pos = parcelOfCell(region, slot), cellsOfParcel = pos ? parcelCells(region, pos.parcel) : null;
+  const parcelFree = !!cellsOfParcel && cellsOfParcel.every((s) => !ctx.bySlot[`${region}:${s}`]);
+  const label = pos ? `Parcel ${pos.parcel + 1} · Plot ${pos.sub + 1}` : `${zone.label} ${slot + 1}`;
   const list = (tutorial ? types.filter((x) => x.slug === (orchardDone ? 'grocery-store' : 'apple-orchard')) : types).filter((x) => plotAllows(kind, x.category));
   if (!list.length) { toast(tutorial ? 'The Grocery Store is not installed yet. Run migration 013 in Supabase.' : `No building can be placed on a ${zone.label.toLowerCase()} yet.`, true); return; }
   const cats = CAT_ORDER.filter((c) => list.some((x) => x.category === c));
@@ -402,8 +422,9 @@ function choose(region, slot, types) {
   const costOf = (x) => Number(x.build_cost) + landFee(r);
   const m = document.createElement('div');
   m.className = 'modal sheet';
-  m.innerHTML = `<div class="card stack modal-box"><h3>${zone.icon} ${zone.label} ${slot + 1} · ${r.name}</h3>
-    <p class="muted">${zone.hint} A plot holds one building only.</p>
+  m.innerHTML = `<div class="card stack modal-box"><h3>${zone.icon} ${label} · ${r.name}</h3>
+    <p class="muted">${zone.hint} One building per plot${parcelFree && !tutorial ? ', or one large building for the whole parcel' : ''}.</p>
+    ${parcelFree && !tutorial ? '<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="whole"> Use the whole parcel</label>' : ''}
     ${cats.length > 1 ? '<div class="bs-tabs" id="bs-tabs"></div>' : ''}
     <div class="bs-list" id="bs-list"></div>
     <p class="muted" id="bs-note"></p>
@@ -440,9 +461,15 @@ function choose(region, slot, types) {
   $('#no').onclick = () => m.remove();
   $('#go').onclick = async (e) => {
     e.target.disabled = true;
-    const { error } = tutorial && !orchardDone
-      ? await supabase.rpc('plant_apples', { p_slot: slot })
-      : await supabase.rpc('build_building', { p_type_slug: pick, p_slot: slot, p_region: region });
+    const whole = !!m.querySelector('#whole')?.checked;
+    const planting = tutorial && !orchardDone;
+    const { error } = pos
+      ? planting
+        ? await supabase.rpc('plant_apples_on_parcel', { p_parcel_index: pos.parcel, p_sub: pos.sub })
+        : await supabase.rpc('build_on_parcel', { p_type_slug: pick, p_parcel_index: pos.parcel, p_sub: whole ? null : pos.sub, p_region: region })
+      : planting
+        ? await supabase.rpc('plant_apples', { p_slot: slot })
+        : await supabase.rpc('build_building', { p_type_slug: pick, p_slot: slot, p_region: region });
     if (error) { toast(error.message, true); e.target.disabled = false; return; }
     m.remove();
     toast(tutorial && !orchardDone ? 'Apples planted!' : 'Construction started!');

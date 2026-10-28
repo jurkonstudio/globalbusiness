@@ -24,11 +24,30 @@ export const landFee = (r) => r.distance * 500;
 //   industry -> utilities, mines, factories
 // Mirrors plot_kind() in migration 015; the server enforces it. Home Isle: rows 1-2 farms, row 3 shops, row 4 industry.
 export const PLOT_KINDS = {
-  farm:     { label: 'Farm plot',     short: 'Farm',     icon: '🌾', cats: ['agriculture'],                         hint: 'One farm per plot. It grows agriculture goods.' },
+  farm:     { label: 'Farm plot',     short: 'Farm',     icon: '🌾', cats: ['agriculture', 'livestock'],                         hint: 'Crops and livestock. One building per plot.' },
   shop:     { label: 'Shop plot',     short: 'Shop',     icon: '🛒', cats: ['retail'],                              hint: 'One retail building per plot. Upgrade it to sell faster.' },
   industry: { label: 'Industry plot', short: 'Industry', icon: '🏭', cats: ['utility', 'extraction', 'construction'], hint: 'Utilities, mines and factories.' },
 };
 const HOME_ROWS = ['farm', 'farm', 'shop', 'industry'];
+
+// Home Isle parcels (migration 020). A parcel is a band of grid cells; its cells are its sub-plots, in order.
+export const HOME_PARCELS = [
+  { index: 0, kind: 'farm', cells: [0, 1, 2, 3, 4, 5] },
+  { index: 1, kind: 'farm', cells: [6, 7, 8, 9, 10, 11] },
+  { index: 2, kind: 'shop', cells: [12, 13, 14] },
+  { index: 3, kind: 'shop', cells: [15, 16, 17] },
+  { index: 4, kind: 'industry', cells: [18, 19, 20] },
+  { index: 5, kind: 'industry', cells: [21, 22, 23] },
+];
+// Parcel index and sub-plot for a grid cell. Null for islands that still use single slots.
+export function parcelOfCell(regionId, slot) {
+  if (regionId !== 'home') return null;
+  const p = HOME_PARCELS.find((x) => x.cells.includes(slot));
+  return p ? { parcel: p.index, sub: p.cells.indexOf(slot) } : null;
+}
+export const parcelCells = (regionId, parcelIndex) => (regionId === 'home' ? HOME_PARCELS[parcelIndex]?.cells : undefined) ?? null;
+// Same key for every cell of one parcel, so roads are drawn only between parcels.
+export const parcelKey = (regionId, slot) => { const p = parcelOfCell(regionId, slot); return p ? `p${p.parcel}` : `s${slot}`; };
 export function plotKind(regionId, slot) {
   const r = REGION[regionId] ?? REGION.home;
   if (r.id === 'home') return HOME_ROWS[Math.floor(slot / r.cols)] ?? 'industry';
