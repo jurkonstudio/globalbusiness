@@ -1,7 +1,6 @@
 import { supabase } from '../core/supabase.js';
-import { state, isGuest } from '../core/state.js';
+import { state } from '../core/state.js';
 import { toast } from './toast.js';
-import { promptOnce } from './saveProgress.js';
 import { ic } from '../config/icons.js';
 import { mountMap3D } from './map3d.js';
 
@@ -105,6 +104,5 @@ function choose(slot, types) {
     m.remove();
     toast(tutorial ? 'Apples planted!' : 'Building constructed!');
     window.dispatchEvent(new Event('hashchange'));
-    if (isGuest()) promptOnce();   // login screen in the middle of the game
   };
 }

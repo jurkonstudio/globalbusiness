@@ -31,6 +31,8 @@ export function render() {
         <li>Build your first production building</li>
         <li>Stock your warehouse</li>
         <li>Sell goods on the marketplace</li></ul>`)}
+      ${card('Company name', `<div class="stack"><input id="rename" value="${c.name.replace(/"/g, '&quot;')}" maxlength="30" />
+        <button class="btn" id="rename-go">Rename</button><p class="msg" id="rename-msg"></p></div>`)}
       ${card('Quick links', `<ul class="list">
         <li><a href="#/buildings/production">Buildings</a></li>
         <li><a href="#/warehouse/inventory">Warehouse</a></li>
@@ -51,6 +53,12 @@ export function mount() {
     };
     return;
   }
+  const rn = document.getElementById('rename-go');
+  if (rn) rn.onclick = async () => {
+    const { error } = await supabase.rpc('rename_company', { new_name: document.getElementById('rename').value });
+    if (error) document.getElementById('rename-msg').textContent = error.message;
+    else window.dispatchEvent(new Event('hashchange'));
+  };
   const g = document.getElementById('globe');
   if (g) mountGlobe(g);
   supabase.from('buildings').select('id', { count: 'exact', head: true }).then(({ count }) => {

@@ -4,7 +4,7 @@ import { toast } from './toast.js';
 
 // Login / Create account sheet, opened from the top bar so new players never leave the game.
 // Create account = upgrade the current guest (keeps the company). Log in = switch to an existing account.
-export function openAuthPanel(tab = 'signup') {
+export function openAuthPanel(tab = 'signup', intro = '') {
   if (document.getElementById('auth-panel')) return;
   let mode = tab;
   const m = document.createElement('div');
@@ -26,7 +26,7 @@ export function openAuthPanel(tab = 'signup') {
     $('#ap-go').textContent = mode === 'signup' ? 'Create account' : 'Log in';
     $('#ap-pass').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
     $('#ap-note').textContent = mode === 'signup'
-      ? 'Your current company is kept and tied to this account.'
+      ? (intro || 'Your current company is kept and tied to this account.')
       : (isGuest() && state.company ? 'Logging in opens your saved company. This guest company will be left behind.' : 'Welcome back.');
     $('#ap-msg').textContent = '';
   };

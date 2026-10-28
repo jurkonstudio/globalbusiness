@@ -5,6 +5,7 @@ import { state, loadCompany } from './state.js';
 import { renderTopbar, clearTopbar } from '../components/topbar.js';
 import { renderBottomNav, renderSubbar, renderDrawer, closeDrawer, clearChrome } from '../components/nav.js';
 import { renderTutorial, mountTutorial } from '../components/tutorial.js';
+import { checkSavePrompt } from '../components/saveProgress.js';
 
 const app = () => document.getElementById('app');
 let guestPromise;
@@ -46,6 +47,7 @@ export async function route() {
   await loadCompany();
   renderTopbar();
   renderDrawer();
+  checkSavePrompt();   // guests get a save-progress prompt at server-defined milestones
 
   // No company yet: the only reachable page is the "found your company" form.
   if (!state.company && !(moduleId === 'headquarters' && subId === 'overview')) {
