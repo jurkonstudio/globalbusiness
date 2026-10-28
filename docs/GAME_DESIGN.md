@@ -27,3 +27,10 @@ Construction materials for new buildings and upgrades, transport units, contract
 
 ## Guest flow
 New players enter as guests (Supabase anonymous sign-in). After the first building, a "Save your progress" dialog turns the guest into a real account.
+
+## Tutorial (stage 3)
+Players enter automatically as guests with $5,000 and Level 0:
+1. Name the company. 2. Buy Seeds and Water from the NPC (Warehouse).
+3. Plant apples on a Map land slot (builds an Apple Orchard for $1,000, uses 1 Seeds + 2 Water).
+4. Wait 3 minutes, collect the harvest: tutorial done, Level 1.
+A "Save your progress" dialog appears right after planting. Land is per company (24 slots); a shared world map comes later.
