@@ -10,6 +10,7 @@ import { qty, money2 } from '../core/format.js';
 import { MAX_PRICE_X, perMinute, demand, EMOJI as RETAIL_EMOJI } from './retailCore.js';
 import { REGIONS, REGION, BONUS_LABEL, landFee, PLOT_KINDS, plotKind, plotAllows, plotCounts } from '../config/regions.js';
 import { loadMissions, claimable, openMissions } from './missions.js';
+import { openQuick, closeQuick } from './mapQuick.js';
 
 const ICON = { agriculture: '🌳', utility: '⚡', extraction: '⛏️', construction: '🧱', retail: '🛒' };
 const money = (n) => '$' + Number(n).toLocaleString('en-US');
@@ -58,10 +59,11 @@ let kept = null, ctx = null, lastSig = '', lastAct = 0, welcomed = false, reload
 
 function onPick(region, slot) {
   if (!ctx) return;
+  closeQuick();
   const r = REGION[region], lvl = state.company.level;
   if (lvl < r.unlock) { toast(`${r.name} unlocks at Level ${r.unlock}.`); return; }
   const x = ctx.bySlot[`${region}:${slot}`];
-  if (x) return openBuilding(x);
+  if (x) return openQuick(QUICK_API, x, ctx);
   if (!state.company.tutorial_done) {
     if (region !== 'home') { toast('Finish the tutorial on Home Isle first.'); return; }
     if (ctx.hasOrchard && lvl < 1) { toast('Wait for your apples to grow, then collect them.'); return; }
@@ -104,9 +106,17 @@ function statusOf(x, jobOf, recipes, stock) {
   return { status: best ? 'blocked' : 'idle' };
 }
 
+// Actions the quick panel needs from this file (kept here so the panel stays a small, separate module).
+const QUICK_API = {
+  supabase, toast, busy, classifyError, qty, money, dur, upgradeCost,
+  openDetails: (x) => openBuilding(x),
+  refresh: () => window.dispatchEvent(new Event('hashchange')),
+};
+
 export async function mountLandGrid() {
   const stage = document.getElementById('map-stage');
   if (!stage) return;
+  closeQuick();
   const inline = stage.classList.contains('inline');
   idleBox(); regionUI();
   const dataP = fetchData();

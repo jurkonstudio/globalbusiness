@@ -52,3 +52,11 @@ Goal: the game should look like a real place to run a business, and be comfortab
 - **Map** (`components/mapIso.js`): ground, roads and the sea use the textures as canvas patterns, transformed onto the isometric grid so grain follows the tiles. Buildings get a soft contact shadow so they sit on the ground. Every texture falls back to the old flat colour until its image loads, or if the file is missing.
 - **UI** (`styles/theme.css`, loaded last): warmer sea-mist paper surfaces, layered elevation tokens (`--e1` to `--e3`), tactile buttons with a clear pressed state, frosted-glass HUD panels so the island shows through, calmer tables, dimmed and blurred modals, and reduced-motion support. Page code is unchanged; the look comes from tokens and selectors.
 - **Rules kept:** 44 px touch targets, visible focus, AA text contrast, status never by colour alone.
+
+# Map quick actions
+
+Tapping one of your buildings on the map opens a compact panel at the bottom of the map (`components/mapQuick.js`), not a modal.
+It shows the building's status (under construction, upgrading, producing, ready, missing inputs) and the actions that apply right now:
+Collect, Produce 1 run (default recipe), Upgrade, and Details. Details opens the full sheet (more runs, recipe choice, store shelves, demolish).
+The panel calls the same RPCs as the full sheet (`collect_production`, `start_production`, `upgrade_building`), so server rules and costs do not change.
+While it is open, the map HUD (region bar, idle box, tool buttons) steps aside. Tapping an empty plot still opens the build sheet.

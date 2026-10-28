@@ -1,207 +1,261 @@
-/* Global Business · "Atlas" visual theme (v2)
-   Loaded LAST, so it overrides main/ui/game/polish without touching page code.
-   Goals: a warm, natural paper-and-sea look that matches the 3D-style island map,
-   clear depth (soft layered shadows instead of hard outlines), calmer text,
-   and comfortable touch targets for long play sessions.
-   Palette rule: each colour is also used on the map (grass, paving, asphalt, sea). */
+/* Global Business · "Atlas" theme v3: dark, dense, flat.
+   Loaded LAST, so it overrides main/ui/game/polish. The map canvas keeps its own colours.
+   Direction: a quieter dark desk with a condensed typeface, smaller text, flat cards,
+   one green call-to-action colour and a few tinted status pills. Less glow, fewer heavy shadows. */
 
 :root {
-  /* surfaces: sea-mist paper, not cold blue-grey */
-  --paper:  #eef1ec;
-  --paper2: #e1e7e0;
-  --card:   #fffefb;
-  --line:   #d6dcd4;
-  --line2:  #c3cbc1;
+  /* surfaces: slate, not black, so the eye rests */
+  --paper:  #1d2125;
+  --paper2: #252a30;
+  --card:   #2a3037;
+  --line:   #3a424b;
+  --line2:  #4a535e;
 
-  /* ink and text: AA contrast on every surface */
-  --ink:  #14202e;
-  --ink2: #1c2c40;
-  --ink3: #2c3f57;
-  --text:  #1b2530;
-  --muted: #56616d;
+  /* text. --ink is a dark fill, never a text colour in this theme */
+  --ink:  #15181c;
+  --ink2: #1d2227;
+  --ink3: #2c333b;
+  --text:  #dfe5ea;
+  --muted: #9aa5b0;
 
-  /* brand: sea blue, grass green, sun gold, brick red for danger */
-  --brand:  #1d6aa8;
-  --brand2: #2a8a55;
-  --gold:   #f0b43a;
-  --danger: #b93a2d;
-  --teal:   #1f8c86;
+  /* accents: green is the action colour, olive for cash, plum for tutorial */
+  --brand:  #6fa23a;
+  --brand2: #5e9a4a;
+  --gold:   #e2b04a;
+  --danger: #c9584a;
+  --teal:   #3f9c95;
+  --cash:   #7d9b1f;
+  --tut:    #4d3562;
 
-  --r:    12px;
-  --r-sm: 9px;
-  --r-lg: 18px;
+  --r:    6px;
+  --r-sm: 4px;
+  --r-lg: 10px;
 
-  /* layered elevation: a soft ambient shadow plus a tight contact shadow */
-  --e1: 0 1px 1px rgba(20,32,46,.06), 0 1px 2px rgba(20,32,46,.06);
-  --e2: 0 2px 4px rgba(20,32,46,.05), 0 8px 20px -6px rgba(20,32,46,.16);
-  --e3: 0 4px 8px rgba(20,32,46,.08), 0 18px 36px -10px rgba(20,32,46,.28);
+  --e1: 0 1px 0 rgba(0,0,0,.25);
+  --e2: 0 2px 6px rgba(0,0,0,.28);
+  --e3: 0 8px 24px rgba(0,0,0,.45);
   --shadow: var(--e2);
 
-  --glass: rgba(255,254,249,.86);
-  --glass-dark: rgba(20,32,46,.78);
+  --glass: rgba(42,48,55,.92);
+  --glass-dark: rgba(21,24,28,.82);
   --ease: cubic-bezier(.2,.7,.2,1);
+
+  /* condensed type: more text per screen, and it reads smaller without losing legibility */
+  --font-head: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --font-body: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
 }
 
-/* ---- Base type and page ---- */
+/* ---- Base: smaller text everywhere (all rem sizes scale from here) ---- */
+html { font-size: 14px; }
 html, body {
-  font-size: 16px;
-  line-height: 1.5;
+  color: var(--text);
+  line-height: 1.35;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
-/* paper grain under everything: subtle, tiles seamlessly, costs one small image */
-body {
-  background-color: var(--paper);
-  background-image: url('../assets/textures/paper-grain.png');
-  background-size: 256px 256px;
-  background-blend-mode: overlay;
-}
-body[data-view="map"] { background-color: #dfe8e4; }
-body[data-view="auth"] { background-color: var(--ink); background-image: none; }
+body { background: var(--paper); background-image: none; }
+body[data-view="map"] { background: #1b2025; }
+body[data-view="auth"] { background: var(--ink); }
 
-h1, h2, h3, .page-head h1 { letter-spacing: -.012em; color: var(--ink); }
-h1, h2, h3 { font-weight: 700; }
-::selection { background: rgba(29,106,168,.22); }
+h1, h2, h3, .page-head h1 { color: var(--text); font-weight: 600; letter-spacing: 0; }
+h1 { font-size: 1.45rem; }
+h2 { font-size: 1.15rem; }
+::selection { background: rgba(111,162,58,.3); }
 
-/* ---- Top bar and sub-nav ---- */
+/* ---- Top bar: dark strip, pills for cash, Global Token and tutorial ---- */
 #topbar {
-  background: linear-gradient(180deg, var(--ink2), var(--ink));
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 4px 14px -6px rgba(10,18,28,.55);
+  background: var(--ink2);
+  border-bottom: 1px solid #0f1215;
+  box-shadow: none;
+  color: var(--text);
 }
+#topbar .cash, #topbar .gt { color: #fff; }
+#topbar .cash {
+  background: var(--cash); border-radius: var(--r-sm); padding: 3px 12px; font-weight: 600;
+}
+#topbar .gt { background: rgba(255,255,255,.08); border-radius: var(--r-sm); padding: 2px 8px; }
+#topbar .phase, #topbar .acct, #topbar .hamb { color: var(--text); }
+/* the "TUTORIAL" pill from the reference: plum badge under the cash */
+#topbar .phase[data-p] { background: var(--tut); border-radius: var(--r-sm); }
+
+/* ---- Sub-nav: text tabs with a green underline (no pills) ---- */
 #subbar {
-  background: var(--glass);
-  backdrop-filter: saturate(1.2) blur(10px);
-  -webkit-backdrop-filter: saturate(1.2) blur(10px);
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset;
+  background: var(--ink2);
+  border-bottom: 1px solid #0f1215;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: none;
 }
-#subbar .chip.active, #subbar .chip[aria-current="page"] { color: var(--brand); }
+#subbar .chip, #subbar .chip.active {
+  background: none; border: 0; border-radius: 0; box-shadow: none;
+  color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .02em;
+  min-height: 36px; height: 38px; padding: 0 12px;
+  border-bottom: 3px solid transparent;
+}
+#subbar .chip.active { color: #fff; border-bottom-color: var(--brand); }
 
-/* ---- Bottom dock ---- */
+/* ---- Bottom nav: icon + small label, active is white ---- */
 #nav {
-  background: linear-gradient(180deg, var(--ink2), var(--ink));
-  border-top: 1px solid rgba(255,255,255,.07);
-  box-shadow: 0 -6px 18px -8px rgba(10,18,28,.5);
+  background: var(--ink2);
+  border-top: 1px solid #0f1215;
+  box-shadow: none;
 }
-#nav a { color: #9bb0c4; transition: background-color .2s var(--ease), color .2s var(--ease), transform .15s var(--ease); }
-#nav a:hover { color: #fff; }
-#nav a:active { transform: scale(.97); }
-#nav a.active { background: rgba(255,255,255,.1); color: #fff; box-shadow: inset 0 -3px 0 var(--gold); }
-#nav a .lbl { font-weight: 600; letter-spacing: .01em; }
+#nav a { color: #7f8b96; font-size: .8rem; font-weight: 600; transition: color .2s var(--ease); }
+#nav a:hover { color: var(--text); }
+#nav a:active { transform: none; }
+#nav a.active { background: none; color: #fff; box-shadow: none; }
+#nav a.active .ico { filter: drop-shadow(0 0 6px rgba(111,162,58,.55)); }
+#nav .ic { width: 20px; height: 20px; }
+#nav a { height: 50px; }
 
-/* ---- Cards and metrics: depth without heavy borders ---- */
+/* ---- Cards and metrics: flat panels, a little lighter than the page ---- */
 .card, .metric {
   background: var(--card);
-  border: 1px solid rgba(20,32,46,.08);
+  border: 1px solid #343b43;
   border-radius: var(--r);
-  box-shadow: var(--e1);
-  transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+  box-shadow: none;
+  transition: background-color .15s var(--ease);
 }
-.card { padding: 1.05rem 1.1rem; }
-.card h3 { color: var(--muted); letter-spacing: .08em; }
-.metric { padding: .8rem .95rem; }
-a.metric:hover { box-shadow: var(--e2); }
-.mt-v { color: var(--ink); }
-.mt-l { color: var(--muted); }
+.card { padding: .8rem .9rem; }
+.card h3 {
+  color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  margin: 0 0 .5rem;
+}
+.metric { padding: .6rem .75rem; background: #262c33; }
+a.metric:hover { background: #2f363e; box-shadow: none; }
+.mt-l, .mt-s, .muted, .sum dt, .tbl th, .why { color: var(--muted); }
+.mt-l { font-size: .8rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.mt-v { color: var(--text); font-size: 1.3rem; font-weight: 600; }
+.mt-v.pos { color: #8fd17a; } .mt-v.neg { color: #f08b7c; } .mt-v.dim { color: var(--muted); }
+.sum div { border-top-color: #343b43; }
+.sum dd, .stat { color: var(--text); }
+.stat { font-weight: 600; font-size: 1.5rem; }
+.why { color: var(--gold); }
 
-/* ---- Buttons: tactile, with a clear pressed state ---- */
+/* ---- Buttons: flat, green call-to-action, muted secondary ---- */
 .btn {
-  background: linear-gradient(180deg, #2a7bbf, var(--brand));
+  background: var(--brand);
   color: #fff;
   border: 0;
   border-radius: var(--r-sm);
-  padding: .72rem 1.15rem;
-  font-weight: 700;
-  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 2px 0 #134b78, 0 6px 14px -6px rgba(29,106,168,.55);
-  transition: transform .12s var(--ease), box-shadow .12s var(--ease), filter .2s;
+  padding: .5rem .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  box-shadow: none;
+  transition: background-color .15s, transform .08s;
 }
-.btn:hover { filter: brightness(1.05); }
-.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 0 0 #134b78, 0 2px 6px -4px rgba(29,106,168,.6); }
-.btn.danger {
-  background: linear-gradient(180deg, #cc4a3c, var(--danger));
-  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 2px 0 #7e261c, 0 6px 14px -6px rgba(185,58,45,.55);
-}
+.btn:hover { background: #7db344; filter: none; }
+.btn:active { transform: translateY(1px); box-shadow: none; filter: none; }
+.btn.danger { background: var(--danger); box-shadow: none; }
 .btn-ghost {
-  background: var(--card);
+  background: transparent;
   color: var(--text);
   border: 1px solid var(--line2);
   border-radius: var(--r-sm);
-  box-shadow: var(--e1);
-  transition: background-color .15s, border-color .15s, transform .12s var(--ease);
+  box-shadow: none;
+  font-weight: 600;
+  text-transform: uppercase;
 }
-.btn-ghost:hover { background: #f6f8f4; border-color: var(--muted); }
+.btn-ghost:hover { background: rgba(255,255,255,.05); border-color: var(--muted); }
 .btn-ghost:active { transform: translateY(1px); }
-.btn:disabled, .btn[disabled] { opacity: .5; box-shadow: none; transform: none; filter: none; }
+.btn:disabled, .btn[disabled] { opacity: .45; box-shadow: none; transform: none; filter: none; }
+
+/* ---- Forms: dark fields, clear focus ---- */
+input, select, textarea {
+  background: #1e2328; color: var(--text);
+  border: 1px solid var(--line2); border-radius: var(--r-sm);
+  font-family: var(--font-body);
+}
+input::placeholder, textarea::placeholder { color: #6b7681; }
+input:focus, select:focus, textarea:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 2px rgba(111,162,58,.25); }
 
 /* ---- Tabs and chips ---- */
-.tabs a { border-radius: 999px; }
-#subbar .chip {
-  border-radius: 10px 10px 0 0;   /* square bottom keeps the active underline straight */
-  transition: background-color .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
-}
-.tabs a { border-color: var(--line2); box-shadow: var(--e1); }
-.tabs a.active { background: var(--ink); border-color: var(--ink); box-shadow: var(--e2); }
-.tabs a:not(.active):hover { color: var(--text); border-color: var(--muted); }
+.tabs a { border-radius: var(--r-sm); border: 0; background: transparent; color: var(--muted); font-weight: 600; text-transform: uppercase; box-shadow: none; }
+.tabs a.active { background: var(--brand); color: #fff; box-shadow: none; }
+.tabs a:not(.active):hover { color: var(--text); background: rgba(255,255,255,.04); }
+.chip { background: rgba(42,48,55,.9); color: var(--text); box-shadow: none; border-radius: var(--r-sm); }
+.chip.on { background: var(--brand); color: #fff; }
 
-/* ---- Map HUD: frosted panels so the island stays visible behind them ---- */
+/* ---- Map HUD: dark frosted panels (the island itself stays bright) ---- */
 .rinfo, .hud.idle, .tool, .chip, .map-hint {
-  backdrop-filter: blur(8px) saturate(1.15);
-  -webkit-backdrop-filter: blur(8px) saturate(1.15);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-.rinfo { background: var(--glass-dark); box-shadow: var(--e2); line-height: 1.35; }
-.hud.idle {
-  background: var(--glass);
-  color: var(--text);
-  box-shadow: var(--e2);
-  border: 1px solid rgba(20,32,46,.06);
-}
-.tool {
-  background: var(--glass);
-  color: var(--ink);
-  border: 1px solid rgba(20,32,46,.06);
-  box-shadow: var(--e2);
-  transition: transform .12s var(--ease), background-color .2s;
-}
-.tool:hover { background: #fff; }
-.tool:active { transform: scale(.94); }
+.rinfo { background: var(--glass-dark); color: var(--text); box-shadow: var(--e2); border-radius: var(--r-sm); }
+.hud.idle { background: var(--glass); color: var(--text); box-shadow: var(--e2); border: 0; border-radius: var(--r-sm); }
+.hud.idle b { color: #fff; }
+.tool { background: var(--glass); color: var(--text); border: 0; border-radius: var(--r-sm); box-shadow: var(--e2); }
+.tool:hover { background: #343b43; }
+.tool:active { transform: none; }
 .fab {
-  background: linear-gradient(180deg, #2a7bbf, var(--brand));
-  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #134b78, 0 10px 18px -8px rgba(29,106,168,.7);
-  transition: transform .12s var(--ease);
+  background: var(--brand); color: #fff; border-radius: var(--r-sm);
+  box-shadow: var(--e2);
 }
-.fab:active { transform: translateY(2px); box-shadow: 0 1px 0 #134b78; }
-.chip { background: var(--glass); color: var(--ink); box-shadow: var(--e1); }
-.chip.on { background: var(--ink); color: #fff; }
-.map-hint { background: var(--glass-dark); color: #fff; box-shadow: var(--e1); }
+.fab:active { transform: translateY(1px); box-shadow: none; }
+.map-hint { background: var(--glass-dark); color: var(--text); box-shadow: none; }
 
-/* ---- Modals and sheets: dim the world, keep the sheet readable ---- */
-.modal { background: rgba(14,24,36,.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
-.modal-box { border-radius: var(--r-lg); box-shadow: var(--e3); }
-.modal.sheet .modal-box { border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px -12px rgba(14,24,36,.35); }
-#drawer { backdrop-filter: blur(2px); }
+/* ---- Modals and sheets ---- */
+.modal { background: rgba(0,0,0,.6); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.modal-box { background: var(--card); border-radius: var(--r-lg); box-shadow: var(--e3); border: 1px solid #343b43; }
+.modal.sheet .modal-box { border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
+#drawer { backdrop-filter: none; }
+.drawer-panel { background: var(--ink2); }
 
-/* ---- Tables: readable rows ---- */
+/* ---- Tables: quiet rows ---- */
 .tbl { border-collapse: separate; border-spacing: 0; }
-.tbl th { color: var(--muted); font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
-.tbl tbody tr:nth-child(even) td { background: rgba(20,32,46,.025); }
-.tbl tbody tr:hover td { background: rgba(29,106,168,.06); }
+.tbl th { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.tbl td, .tbl th { border-bottom-color: #343b43; }
+.tbl tbody tr:nth-child(even) td { background: rgba(0,0,0,.12); }
+.tbl tbody tr:hover td { background: rgba(111,162,58,.08); }
 
-/* ---- Toasts: a clean pill with depth ---- */
-#toasts .toast { background: var(--ink); color: #fff; box-shadow: var(--e3); border: 0; }
+/* ---- Status pills: tinted, not bright white ---- */
+.st { font-weight: 600; }
+.st-ok   { background: rgba(111,162,58,.2); color: #a8d86e; }
+.st-warn { background: rgba(226,176,74,.18); color: #f0cb7a; }
+.st-bad  { background: rgba(201,88,74,.2);   color: #f0a094; }
+.st-info { background: rgba(63,156,149,.2);  color: #8fd6cf; }
+.st-idle { background: rgba(255,255,255,.08); color: var(--muted); }
+.st-lock { background: rgba(255,255,255,.06); color: var(--muted); }
 
-/* ---- Focus: visible, never hidden by a colour alone ---- */
-:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
-.btn:focus-visible { outline-color: var(--gold); }
+/* ---- Toasts ---- */
+#toasts .toast { background: #0f1215; color: var(--text); box-shadow: var(--e3); border: 1px solid #343b43; border-radius: var(--r-sm); }
+
+/* ---- Focus: visible, gold ring ---- */
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
 
 /* ---- Comfort: no motion for people who ask for less ---- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 }
 
-/* ---- Small phones: keep the chrome from crowding the map ---- */
 @media (max-width: 380px) {
-  .card { padding: .9rem; }
-  .hud.rbar { right: 64px; }
+  html { font-size: 13px; }
+  .card { padding: .7rem; }
 }
+
+/* ---- Map quick actions: a compact panel over the bottom of the map ---- */
+.map-quick {
+  position: absolute; z-index: 4;
+  left: 8px; right: 8px; max-width: 560px; margin: 0 auto;
+  bottom: calc(var(--dock-h) + 10px + env(safe-area-inset-bottom));
+  background: var(--glass-dark); color: var(--text);
+  border: 1px solid #3a424b; border-radius: var(--r);
+  box-shadow: var(--e3);
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.mq-head { display: flex; align-items: flex-start; gap: 8px; }
+.mq-head b { display: block; color: #fff; font-size: 1.05rem; font-weight: 600; }
+.mq-status { display: block; margin-top: 2px; font-size: .85rem; color: var(--muted); line-height: 1.3; }
+.mq-status.tone-ok { color: #a8d86e; }
+.mq-status.tone-warn { color: #f0cb7a; }
+.mq-x {
+  margin-left: auto; flex: none; width: 36px; height: 36px; min-height: 36px;
+  background: none; border: 0; color: var(--muted); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.mq-x:hover { color: #fff; }
+.mq-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.mq-actions button { flex: 1 1 auto; }
+
+/* While the panel is open, the map HUD steps aside so nothing sits on top of the buttons */
+body.quick-open .hud.rbar, body.quick-open .hud.idle, body.quick-open .hud.tools { display: none; }

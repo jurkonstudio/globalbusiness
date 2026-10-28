@@ -17,7 +17,7 @@ const LIP = 0.5;                 // slab margin around the plots, in tiles
 const TAU = Math.PI * 2;
 const INK = '#0d1b2a', INK2 = '#15283d', CARD = '#fffdf8', BRAND = '#e4572e', TEAL = '#1f9d8a', GOLD = '#e0a526';
 const LINE = 'rgba(13,27,42,.38)';
-const FONT = '"Space Grotesk","DM Sans","Segoe UI",system-ui,sans-serif';
+const FONT = '"Barlow Condensed","Arial Narrow",system-ui,sans-serif';   // same family as the UI (theme.css)
 
 // ---------- World layout (tile units). The Warehouse is the hub, each island hangs on a trunk road ----------
 const HUB = { x: 0, y: 0, w: 4, h: 4, cx: 2, cy: 2 };
