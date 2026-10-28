@@ -212,6 +212,7 @@ function openBuilding(x) {
   m.className = 'modal sheet';
   m.innerHTML = `<div class="card stack modal-box"><h3>${bt.name} · LVL ${lvl}</h3>
     <p class="muted">${REGION[x.region_id ?? 'home'].name}${status ? ' · ' + status : ''}</p>
+    <p class="muted">Capacity ×${lvl}${lvl < MAX_LEVEL ? ` → ×${lvl + 1} after upgrade` : ''}</p>
     ${busy ? '' : '<a class="btn" href="#/buildings/production">Production</a>'}
     ${lvl >= MAX_LEVEL ? '<p class="muted">Maximum level reached.</p>'
       : busy ? '' : `<button class="btn-ghost" id="up">Upgrade to LVL ${lvl + 1} · ${money(cost)} · ${dur(secs)}</button>`}
