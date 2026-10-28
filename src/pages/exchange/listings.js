@@ -55,6 +55,8 @@ async function load() {
   if (!el.isConnected) return;
   if (r.error || o.error) { el.innerHTML = errorBlock('The market could not be loaded.'); return; }
   data = { res: r.data ?? [], orders: o.data ?? [], mine: state.company?.id };
+  let want = null; try { want = Number(sessionStorage.getItem('ex-focus')) || null; sessionStorage.removeItem('ex-focus'); } catch { /* ignore */ }
+  if (want && data.res.some((x) => x.id === want)) { selRes = want; view = 'detail'; selOrder = ordersOf(want)[0]?.id ?? null; await loadLast(want); }
   if (selRes && !data.res.some((x) => x.id === selRes)) { selRes = null; view = 'grid'; }
   if (view === 'detail' && selRes) {
     const cheapest = ordersOf(selRes)[0];

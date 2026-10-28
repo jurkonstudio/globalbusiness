@@ -20,3 +20,9 @@ export function marketError(err) {
   if (/order not found/i.test(err?.message ?? '')) return { ...c, kind: 'gone', text: 'This order is no longer available. It was bought or cancelled by someone else.' };
   return c;
 }
+
+// Map -> Exchange: open the Exchange page with this resource already selected (read once by exchange/listings.js).
+export function buyOnExchange(resourceId) {
+  try { sessionStorage.setItem('ex-focus', String(resourceId)); } catch { /* private mode: the player just picks it */ }
+  if (location.hash === '#/exchange/listings') window.dispatchEvent(new Event('hashchange')); else location.hash = '#/exchange/listings';
+}

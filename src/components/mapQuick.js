@@ -17,7 +17,7 @@ export function closeQuick() {
 export function openQuick(api, x, ctx) {
   closeQuick();
   const stage = document.getElementById('map-stage'); if (!stage) return;
-  const { supabase, toast, busy, classifyError, qty, money, dur, upgradeCost, openDetails, refresh } = api;
+  const { supabase, toast, busy, classifyError, qty, money, money2, dur, upgradeCost, buyOnExchange, openDetails, refresh } = api;
   const bt = x.building_types, lvl = x.level ?? 1, now = Date.now();
   const time = (t) => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   const job = ctx.jobOf[x.id], jobDone = !!job && new Date(job.finish_at) <= now, jobRun = !!job && !jobDone;
@@ -25,7 +25,7 @@ export function openQuick(api, x, ctx) {
   const retail = bt.category === 'retail', rc = recipes[0];
   const building = !!x.build_finish_at && new Date(x.build_finish_at) > now, upgrading = !!x.upgrade_finish_at;
   const recName = rc?.resources?.name ?? 'goods';
-  const ins = rc ? rc.recipe_inputs.map((i) => ({ name: i.resources?.name ?? 'item', need: i.qty * lvl, have: ctx.stock[i.resource_id] ?? 0 })) : [];
+  const ins = rc ? rc.recipe_inputs.map((i) => ({ rid: i.resource_id, name: i.resources?.name ?? 'item', need: i.qty * lvl, have: ctx.stock[i.resource_id] ?? 0 })) : [];
   const short = ins.filter((i) => i.have < i.need);
   const cost = upgradeCost(bt, lvl);
 
@@ -45,6 +45,8 @@ export function openQuick(api, x, ctx) {
     btns.push(`<button class="btn" data-act="produce">Produce 1 run</button>`);
   if (lvl < MAX_LEVEL && !building && !upgrading && !job)
     btns.push(`<button class="btn-ghost" data-act="upgrade">Upgrade · ${money(cost)}</button>`);
+  if (!building && !upgrading && !job && !retail && short.length)
+    for (const i of short) btns.unshift(`<button class="btn" data-act="buy" data-rid="${i.rid}">Buy ${esc(i.name)} · ${qty(i.need - i.have)} on Exchange</button>`);
   btns.push(`<button class="btn-ghost" data-act="details">Details</button>`);
 
   const el = document.createElement('div');
@@ -55,15 +57,38 @@ export function openQuick(api, x, ctx) {
       <div><b>${esc(bt.name)} · LVL ${lvl}</b><small class="mq-status tone-${tone}">${esc(status)}</small></div>
       <button class="mq-x" data-act="close" aria-label="Close">×</button>
     </div>
-    <div class="mq-actions">${btns.join('')}</div>`;
+    <div class="mq-actions">${btns.join('')}</div>
+    ${retail && !building && !upgrading ? '<div class="mq-shelf muted">Loading shelves…</div>' : ''}`;
   stage.appendChild(el);
   document.body.classList.add('quick-open');
   open = el;
+
+  const shelf = el.querySelector('.mq-shelf');
+  if (shelf) (async () => {
+    const { data: lst, error } = await supabase.from('store_listings').select('resource_id').eq('building_id', x.id);
+    if (!el.isConnected) return;
+    const prods = (ctx.resources ?? []).filter((p) => p.retail_ok);
+    if (error || !prods.length) { shelf.remove(); return; }
+    const on = new Set((lst ?? []).map((l) => l.resource_id)), full = on.size >= 4;
+    const rows = prods.filter((p) => !on.has(p.id)).sort((a, b) => (ctx.stock[b.id] ?? 0) - (ctx.stock[a.id] ?? 0)).slice(0, 3).map((p) => {
+      const have = ctx.stock[p.id] ?? 0;
+      return have >= 1 && !full
+        ? `<button class="btn" data-act="sell" data-rid="${p.id}" data-price="${Number(p.retail_ref)}" data-name="${esc(p.name)}">Sell ${esc(p.name)} · ${qty(have)} in stock · ${money2(p.retail_ref)}</button>`
+        : have < 1 ? `<button class="btn-ghost" data-act="buy" data-rid="${p.id}">No ${esc(p.name)}: buy on Exchange</button>` : '';
+    }).join('');
+    shelf.className = 'mq-actions'; shelf.innerHTML = on.size ? `<small class="muted">${on.size} product${on.size > 1 ? 's' : ''} on sale</small>${rows}` : rows;
+  })();
 
   el.onclick = async (e) => {
     const btn = e.target.closest('[data-act]'); if (!btn) return;
     const act = btn.dataset.act;
     if (act === 'close') return closeQuick();
+    if (act === 'buy') { closeQuick(); return buyOnExchange(Number(btn.dataset.rid)); }
+    if (act === 'sell') return busy(btn, async () => {
+      const { error } = await supabase.rpc('set_store_listing', { p_building: x.id, p_resource: Number(btn.dataset.rid), p_price: Number(btn.dataset.price) });
+      if (error) return toast(classifyError(error).text, true);
+      toast(`${btn.dataset.name} is on sale at ${money2(btn.dataset.price)}`); closeQuick(); refresh();
+    });
     if (act === 'details') { closeQuick(); return openDetails(x); }
     if (act === 'collect') return busy(btn, async () => {
       const { data, error } = await supabase.rpc('collect_production', { p_job: job.id });

@@ -3,6 +3,8 @@ import { state } from '../core/state.js';
 import { toast } from './toast.js';
 import { ic } from '../config/icons.js';
 import { mountMapIso } from './mapIso.js';
+import { mountMap3d } from './map3d.js';
+import { buyOnExchange } from './market.js';
 import { confirmDialog, busy, classifyError, statusChip } from './ui.js';
 import { esc } from '../core/escape.js';
 import { missingFor } from '../core/ops.js';
@@ -18,11 +20,11 @@ const money = (n) => '$' + Number(n).toLocaleString('en-US');
 const dur = (s) => s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : s >= 60 ? `${Math.floor(s / 60)}m` : `${s}s`;
 const MAX_LEVEL = 6;
 const upgradeCost = (bt, lvl) => Math.round(bt.build_cost * lvl * 0.6);
-const upgradeSecs = (bt, lvl) => Math.max(bt.build_seconds ?? 0, 60) * lvl;
+const upgradeSecs = (bt, lvl) => Math.max(bt.build_seconds ?? 0, 600) * lvl;   // mirrors upgrade_seconds() in migration 024
 
 // The 3D scene mounts into #map-stage. `inline` = embedded in a normal page (Land Slots), no HUD.
 export const landGridHtml = (inline = false) => `<div id="map-stage" class="map-stage${inline ? ' inline' : ''}">
-    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to pan · pinch to zoom · tap a green farm plot or a shop plot to build, tap a building to run or upgrade it</div>'}</div>
+    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to rotate · pinch to zoom · tap a green farm plot or a shop plot to build, tap a building to run or upgrade it</div>'}</div>
   ${inline ? '' : `<div class="hud rbar"><div class="rinfo" id="map-rinfo"></div><div class="rchips" id="map-chips"></div></div>
   <a class="hud idle" href="#/buildings/production" id="idle-box"></a>
   <div class="hud tools">
@@ -111,7 +113,7 @@ function statusOf(x, jobOf, recipes, stock) {
 
 // Actions the quick panel needs from this file (kept here so the panel stays a small, separate module).
 const QUICK_API = {
-  supabase, toast, busy, classifyError, qty, money, dur, upgradeCost,
+  supabase, toast, busy, classifyError, qty, money, money2, dur, upgradeCost, buyOnExchange,
   openDetails: (x) => openBuilding(x),
   refresh: () => window.dispatchEvent(new Event('hashchange')),
 };
@@ -127,8 +129,8 @@ export async function mountLandGrid() {
   let map;
   if (!inline && kept) { if (stage !== kept.stage) stage.replaceWith(kept.stage); map = kept.map; }
   else {
-    map = await mountMapIso(stage, { level: state.company.level, onPick, keepAlive: !inline,
-      onRegion: (id) => regionUI(id), onTimerDone: () => reload() });
+    const opts = { level: state.company.level, onPick, keepAlive: !inline, onRegion: (id) => regionUI(id), onTimerDone: () => reload() };
+    map = (await mountMap3d(stage, opts)) ?? (await mountMapIso(stage, opts));   // real 3D; the 2D isometric map only if WebGL is unavailable
     if (map && !inline) kept = { stage, map };
   }
   reload = () => { if (document.getElementById('map-stage')) mountLandGrid(); };
@@ -288,7 +290,7 @@ function openBuilding(x) {
     ${canStart ? `<div class="ps-prod"><div class="fld"><label for="ps-r">Recipe</label><select id="ps-r">${recipes.map((r) => `<option value="${r.id}">${esc(r.resources?.name)}</option>`).join('')}</select></div>
       <div class="fld"><label for="ps-n">Runs (1 to 20)</label><input id="ps-n" type="number" inputmode="numeric" min="1" max="20" step="1" value="1" /></div>
       <div class="flow" id="ps-flow"></div><p class="why" id="ps-why" hidden></p>
-      <a class="btn-ghost" href="#/marketplace/buy" id="ps-market" hidden>Buy missing inputs on the Market</a>
+      <button class="btn-ghost" id="ps-market" hidden>Buy missing inputs on the Exchange</button>
       <button class="btn" id="start">Start production</button></div>` : ''}
     ${retail && !upBusy ? '<div class="stack" id="shelf"><p class="muted">Loading shelves…</p></div>' : ''}
     <p class="muted">${retail ? 'Sales speed' : 'Capacity'} ×${lvl}${lvl < MAX_LEVEL ? ` → ×${lvl + 1} after upgrade` : ''}</p>
@@ -301,18 +303,18 @@ function openBuilding(x) {
   document.body.appendChild(m);
   const done = (msg) => { m.remove(); toast(msg); window.dispatchEvent(new Event('hashchange')); };
 
-  const box = m.querySelector('.ps-prod');
+  const box = m.querySelector('.ps-prod'); let shortIds = [];
   if (box) {
     const paint = () => {
       const rc = recipes.find((r) => r.id === Number(m.querySelector('#ps-r').value)), raw = Number(m.querySelector('#ps-n').value), runs = Math.floor(raw);
       const valid = Number.isInteger(raw) && runs >= 1 && runs <= 20, r = valid ? runs : 1;
-      const ins = rc.recipe_inputs.map((i) => ({ name: i.resources?.name, need: i.qty * lvl * r, have: ctx.stock[i.resource_id] ?? 0 }));
+      const ins = rc.recipe_inputs.map((i) => ({ rid: i.resource_id, name: i.resources?.name, need: i.qty * lvl * r, have: ctx.stock[i.resource_id] ?? 0 }));
       const short = ins.filter((i) => i.have < i.need);
       m.querySelector('#ps-flow').innerHTML = (ins.length ? ins.map((i) => `<span class="res${i.have < i.need ? ' short' : ''}">${qty(i.need)} ${esc(i.name)} <small>(have ${qty(i.have)})</small></span>`).join('') : '<span class="res">No inputs</span>')
         + `<span class="arrow">→</span><span class="res">${dur(rc.duration_seconds * r)}</span><span class="arrow">→</span><span class="res"><b>${qty(rc.output_qty * lvl * r)} ${esc(rc.resources?.name)}</b></span>`;
       const why = m.querySelector('#ps-why'), reason = !valid ? 'Enter a whole number of runs from 1 to 20.' : short.length ? `Not enough ${short.map((i) => `${i.name} (need ${qty(i.need)}, have ${qty(i.have)})`).join(', ')}. Buy it on the Market or produce it first.` : '';
       why.hidden = !reason; why.textContent = reason; m.querySelector('#start').disabled = !!reason;
-      m.querySelector('#ps-market').hidden = !short.length;
+      m.querySelector('#ps-market').hidden = !short.length; shortIds = short.map((i) => i.rid);
     };
     paint(); box.addEventListener('input', paint);
   }
@@ -374,6 +376,7 @@ function openBuilding(x) {
     const id = e.target.id;
     if (e.target === m || id === 'no' || e.target.closest('a')) return m.remove();
     const btn = e.target.closest('button'); if (!btn) return;
+    if (id === 'ps-market') { m.remove(); return buyOnExchange(shortIds[0]); }
     if (btn.closest('#shelf')) return shelfAction(btn);
     if (id === 'col') busy(btn, async () => {
       const { data, error } = await supabase.rpc('collect_production', { p_job: job.id });
