@@ -91,6 +91,7 @@ export async function route() {
   if (stale()) return;
   if (!session) {
     window.__gbNotice = guestError ? 'Guest play is unavailable right now. Log in or create an account to play.' : '';
+    window.__gbError = guestError || '';
     location.hash = '#/auth/login';
     return;
   }

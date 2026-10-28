@@ -24,7 +24,7 @@ export function renderDrawer() {
   el.innerHTML = `<div class="drawer-panel">
     <div class="dp-head"><b>Global Business</b><small>Menu</small></div>
     <div class="dp-grid">${DRAWER.map((d) => `<a class="d-item" href="${d.to}"><span class="g">${d.title.charAt(0)}</span>${d.title}</a>`).join('')}</div>
-    ${isGuest() ? '<button class="d-item hot" data-act="save">Log in / Create account</button>' : ''}
+    ${isGuest() ? '<button class="d-item hot" data-act="save">Save game · Create account / Log in</button>' : ''}
     <button class="d-item out" data-act="logout">Log out</button></div>`;
   el.onclick = async (e) => {
     const act = e.target.dataset.act;

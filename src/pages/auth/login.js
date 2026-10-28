@@ -1,10 +1,17 @@
 import { supabase } from '../../core/supabase.js';
+import { esc } from '../../core/escape.js';
+
+const hint = (m) => /anonymous/i.test(m) ? 'Fix: in Supabase open Authentication > Sign In / Providers and turn on Anonymous Sign-Ins.'
+  : /database error|saving new user/i.test(m) ? 'Fix: a database trigger is failing while creating the player. Re-run migration 004 in the SQL Editor.'
+  : /rate|too many|429/i.test(m) ? 'Too many guest sign-ins from this network. Wait a few minutes and tap Play as guest.'
+  : 'Tap Play as guest to try again.';
 
 export function render() {
   return `<section class="auth">
     <div class="card stack">
       <h1>Global Business</h1><h2>Log In</h2>
-      ${window.__gbNotice ? `<p class="muted">${window.__gbNotice}</p>` : ''}
+      ${window.__gbNotice ? `<p class="muted">${esc(window.__gbNotice)}</p>` : ''}
+      ${window.__gbError ? `<p class="msg">Reason: ${esc(window.__gbError)}<br>${esc(hint(window.__gbError))}</p>` : ''}
       <input id="email" type="email" placeholder="Email" autocomplete="email" />
       <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
       <button class="btn" id="submit">Log In</button>
