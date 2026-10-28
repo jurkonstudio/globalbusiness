@@ -5,6 +5,8 @@
 -- (from its "-- Q..." line to the semicolon), press Run, read or export the result.
 -- Keep the numbers from Q1 and the CSV files: they are your "before" picture for every later migration.
 --
+--   Q0       ONE-STEP SUMMARY: baseline numbers plus every health check in one small table.
+--            If you are short on time, run only Q0 (and the Q5 exports). Q1-Q4 below are the detailed versions.
 --   Q1       baseline numbers (row counts, total cash, ledger gap)              -> write the row down
 --   Q2       function privileges: did migration 009 take effect?                -> first row must say 'ok'
 --   Q3       pre-checks for migration 012 (all three numbers must be 0)
@@ -16,6 +18,66 @@
 --
 -- Suggested file names: m0_companies_YYYY-MM-DD.csv, m0_buildings_YYYY-MM-DD.csv, and so on.
 -- Then run supabase/migrations/012_hardening.sql.
+
+
+-- Q0 ---------------------------------------------------------------------------------------
+-- Rows numbered 20 and up are health checks: every one of them must be 0.
+-- Anything else: stop and look before running a later migration (Q2 and Q4 below show which functions / companies).
+with expected(sig, player) as (values
+  ('create_company(text)', true), ('rename_company(text)', true),
+  ('build_building(text,integer,text)', true), ('plant_apples(integer)', true), ('upgrade_building(uuid)', true),
+  ('buy_from_npc(integer,numeric)', true), ('sell_to_npc(integer,numeric)', true),
+  ('start_production(uuid,integer,integer)', true), ('collect_production(uuid)', true),
+  ('list_on_exchange(integer,numeric,numeric)', true), ('cancel_exchange_order(uuid)', true),
+  ('buy_from_exchange(uuid,numeric)', true),
+  ('claim_mission(text)', true), ('mission_status()', true),
+  ('sync_progress()', true), ('welcome_back()', true), ('touch_seen()', true),
+  ('should_prompt_save()', true), ('mark_save_prompted()', true), ('region_activity()', true),
+  ('upgrade_cost(numeric,integer)', true), ('upgrade_seconds(integer,integer)', true),
+  ('apply_cash(uuid,numeric,text,integer,numeric,text)', false), ('add_stock(uuid,integer,numeric)', false),
+  ('settle_buildings(uuid)', false), ('mission_done(uuid,text)', false), ('handle_new_user()', false)
+), priv as (
+  select count(*) as bad
+    from (select p.oid, p.oid::regprocedure::text as sig
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.prokind = 'f'
+             and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')) a
+    left join expected e on e.sig = a.sig
+   where e.sig is null
+      or has_function_privilege('anon', a.oid, 'execute')
+      or has_function_privilege('authenticated', a.oid, 'execute') <> e.player
+), chain as (
+  select count(*) as bad
+    from (select balance_after - amount as before_bal,
+                 lag(balance_after) over (partition by company_id order by id) as prev_bal
+            from transactions) x
+   where prev_bal is not null and before_bal <> prev_bal
+), per_company as (
+  select c.id, c.cash, coalesce(sum(t.amount), 0) as ledger_sum,
+         (select x.balance_after from transactions x where x.company_id = c.id order by x.id desc limit 1) as last_bal
+    from companies c left join transactions t on t.company_id = c.id
+   group by c.id
+)
+select n, item, value from (
+  select 1 as n, 'taken_at' as item, now()::text as value
+  union all select 2, 'companies', count(*)::text from companies
+  union all select 3, 'total_cash', coalesce(sum(cash), 0)::text from companies
+  union all select 4, 'buildings', count(*)::text from buildings
+  union all select 5, 'active_jobs', count(*)::text from production_jobs where not collected
+  union all select 6, 'inventory_rows', count(*)::text from inventory
+  union all select 7, 'ledger_rows', count(*)::text from transactions
+  union all select 8, 'ledger_sum', coalesce(sum(amount), 0)::text from transactions
+  union all select 9, 'cash_minus_ledger (becomes the opening balances)',
+         ((select coalesce(sum(cash), 0) from companies) - (select coalesce(sum(amount), 0) from transactions))::text
+  union all select 10, 'market_orders', count(*)::text from market_orders
+  union all select 20, 'functions with wrong privileges (must be 0)', bad::text from priv
+  union all select 21, 'companies whose cash differs from their last ledger balance (must be 0)', count(*)::text
+         from per_company where last_bal is not null and last_bal <> cash
+  union all select 22, 'ledger rows that break the balance chain (must be 0)', bad::text from chain
+  union all select 23, 'companies with a negative implied opening balance (must be 0)', count(*)::text
+         from per_company where cash - ledger_sum < 0
+) s
+order by n;
 
 
 -- Q1 ---------------------------------------------------------------------------------------
