@@ -25,7 +25,7 @@ global-business/
 │   ├── styles/
 │   └── pages/<module>/<section>.js
 ├── supabase/
-│   ├── migrations/    # 001_init.sql ... 012_hardening.sql, run in numeric order
+│   ├── migrations/    # 001_init.sql ... 014_demolish_building.sql, run in numeric order
 │   ├── ops/           # read-only SQL for checks and backups (not migrations)
 │   └── seed.sql
 └── docs/
@@ -33,7 +33,7 @@ global-business/
 
 ## Setup
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the SQL Editor run every file in `supabase/migrations/` in numeric order (001 to 012). Before each new migration, take a baseline and backup with `supabase/ops/M0_baseline_and_backup.sql`. `seed.sql` is intentionally empty; all data is seeded by the migrations. In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
+2. In the SQL Editor run every file in `supabase/migrations/` in numeric order (001 to 014, then any later numbers). Never run the same file twice unless its header says it is safe to re-run. Before each new migration, take a baseline and backup with `supabase/ops/M0_baseline_and_backup.sql`. `seed.sql` is intentionally empty; all data is seeded by the migrations. In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
 3. Put your Project URL and anon key in `src/config/supabase.js`.
 4. Push to GitHub, then enable **Settings > Pages > Deploy from branch (main, root)**.
 
