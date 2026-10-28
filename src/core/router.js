@@ -30,6 +30,7 @@ export async function route() {
     return;
   }
   if (!data.session) { location.hash = '#/auth/login'; return; }
+  state.user = data.session.user;
 
   await loadCompany();
   renderTopbar();

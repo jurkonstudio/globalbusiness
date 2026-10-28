@@ -7,6 +7,7 @@ export function render() {
       <input id="email" type="email" placeholder="Email" autocomplete="email" />
       <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
       <button class="btn" id="submit">Log In</button>
+      <button class="btn-ghost" id="guest">Play as guest</button>
       <p class="msg" id="msg"></p>
       <a href="#/auth/register">Create an account</a>
     </div>
@@ -14,11 +15,16 @@ export function render() {
 }
 
 export function mount() {
+  const msg = document.getElementById('msg');
+  const go = () => { location.hash = '#/headquarters/overview'; window.dispatchEvent(new Event('hashchange')); };
   document.getElementById('submit').onclick = async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) document.getElementById('msg').textContent = error.message;
-    else { location.hash = '#/headquarters/overview'; window.dispatchEvent(new Event('hashchange')); }
+    if (error) msg.textContent = error.message; else go();
+  };
+  document.getElementById('guest').onclick = async () => {
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) msg.textContent = error.message; else go();
   };
 }
