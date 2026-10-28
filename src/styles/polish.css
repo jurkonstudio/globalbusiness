@@ -148,3 +148,73 @@ details.fold > :not(summary) { margin-bottom:.9rem; }
 .rt-add { display:flex; flex-direction:column; gap:.5rem; padding-top:.7rem; border-top:1px dashed var(--line); }
 .metrics { display:grid; gap:.6rem; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin:0 0 .75rem; }
 h2.sec { margin:1rem 2px .5rem; font:700 1.02rem var(--font-head); }
+
+/* ===== Tema Sim Companies: override (tempel di PALING BAWAH polish.css) ===== */
+
+/* Sub-nav: tab bergaris bawah */
+#subbar .chip { height:44px; min-height:44px; padding:0 14px 0 10px; border:0; border-bottom:3px solid transparent;
+  border-radius:0; background:none; color:var(--muted); box-shadow:none; font:600 .85rem var(--font-body); }
+#subbar .chip.active { background:none; border-color:transparent; border-bottom-color:var(--brand); color:var(--brand); }
+#subbar .chip .ic { width:18px; height:18px; }
+
+/* Judul halaman, kartu, tab */
+.page-head h1 { font-size:1.35rem; font-weight:700; }
+.card, .metric, .order, .bcard, .alert, .op, .fi, details.fold { box-shadow:0 1px 2px rgba(16,24,40,.08); }
+.tabs a { border-radius:4px; }
+.tabs a.active { background:var(--brand); border-color:var(--brand); }
+
+/* Tombol datar */
+.btn { border-radius:4px; box-shadow:none; border-bottom:2px solid rgba(0,0,0,.25); }
+.btn:hover { filter:brightness(1.08); }
+.btn:active { transform:none; filter:brightness(.92); box-shadow:none; }
+.btn.danger { background:var(--danger); box-shadow:none; }
+.btn-buy, .order .btn[data-buy] { background:var(--brand2); }
+.btn-ghost { background:#fff; color:var(--text); border:1px solid var(--line); border-radius:4px; }
+.order .btn[data-buy] { align-self:stretch; }
+
+/* Input */
+input, select { border:1px solid var(--line); border-radius:4px; }
+input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(31,111,191,.18); }
+
+/* Tabel */
+.tbl th { background:var(--paper); border-bottom:1px solid var(--line); }
+.tbl tbody tr:nth-child(even) td { background:#f7f9fb; }
+
+/* Modal, toast, chip status */
+.modal { background:rgba(16,24,40,.55); }
+.modal.sheet .modal-box { border-radius:12px 12px 0 0; }
+#toasts .toast { border-radius:4px; }
+.st { border-radius:4px; }
+.bs-card.on { background:#eef5fc; }
+
+/* Order pasar */
+.order { border-left:4px solid var(--brand2); }
+.order .px { color:#1b6b3c; }
+
+/* Kartu gudang: ikon tengah, jumlah besar, nama di bawah */
+.tile { width:112px; height:150px; border:1px solid var(--line); border-radius:6px; background:#fff;
+  box-shadow:0 1px 2px rgba(16,24,40,.08); text-align:center; }
+.tile:active { border-color:var(--brand); }
+.tile .ico { left:0; right:0; top:8px; font-size:2.1rem; }
+.tile .qt { margin-top:46px; font-size:1.5rem; text-align:center; }
+.tile .stt { left:0; right:0; bottom:44px; }
+.tile .pr { position:absolute; left:0; right:0; bottom:26px; font-size:.68rem; }
+.tile .nm { left:6px; right:6px; bottom:8px; text-align:center; }
+
+/* Papan bangunan */
+.m2-scroll { background:#eef2f6; }
+.m2-board { background-color:#f4f7fa;
+  background-image:linear-gradient(#dde4ec 1px,transparent 1px),linear-gradient(90deg,#dde4ec 1px,transparent 1px); }
+.m2-zone { border-radius:8px; border-width:1px; background:rgba(255,255,255,.88); }
+.m2-zone header { border-radius:7px 7px 0 0; }
+.m2-tile { border-radius:6px; }
+.m2-tile.bld { border:1px solid rgba(16,24,40,.18); border-top:4px solid #aaa; box-shadow:0 1px 2px rgba(16,24,40,.15); }
+.m2-tile.cat-agriculture { border-top-color:#6fae5a; } .m2-tile.cat-retail { border-top-color:#e0902f; }
+.m2-tile.cat-utility { border-top-color:#e0b528; } .m2-tile.cat-extraction { border-top-color:#8f857a; }
+.m2-tile.cat-construction { border-top-color:#c0634a; }
+.m2-hub { border-radius:8px; border:1px solid var(--ink); box-shadow:0 2px 0 rgba(16,24,40,.18); }
+
+/* HUD peta */
+.fab, .tool { border-radius:8px; }
+.hud.idle, .rl { border-radius:6px; }
+.bl-label, .rinfo { border-radius:4px; }
