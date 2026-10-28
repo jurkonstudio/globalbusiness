@@ -1,5 +1,6 @@
 import { supabase } from '../../core/supabase.js';
 import { shell } from '../../components/shell.js';
+import { esc } from '../../core/escape.js';
 
 export function render() {
   return shell('Search', 'Companies', `<div class="stack">
@@ -17,7 +18,7 @@ export function mount() {
       const v = q.value.trim();
       if (v.length < 2) { res.innerHTML = ''; return; }
       const { data } = await supabase.from('companies').select('name, level').ilike('name', `%${v}%`).limit(20);
-      res.innerHTML = (data ?? []).map((c) => `<div class="card row"><b>${c.name}</b><span class="muted">Level ${c.level}</span></div>`).join('')
+      res.innerHTML = (data ?? []).map((c) => `<div class="card row"><b>${esc(c.name)}</b><span class="muted">Level ${c.level}</span></div>`).join('')
         || '<div class="empty">No companies found.</div>';
     }, 250);
   };

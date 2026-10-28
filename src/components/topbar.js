@@ -1,4 +1,5 @@
 import { state, isGuest } from '../core/state.js';
+import { esc } from '../core/escape.js';
 import { openAuthPanel } from './authPanel.js';
 import { ic } from '../config/icons.js';
 import { toggleDrawer } from './nav.js';
@@ -14,8 +15,8 @@ export function renderTopbar() {
   el.innerHTML = `
     <button class="hamb" id="open-drawer" aria-label="Menu">${ic('menu')}${state.alerts ? '<i class="dot"></i>' : ''}</button>
     ${c ? `<a class="brand" href="#/headquarters/overview" aria-label="Company">
-        <span class="mono">${c.name.charAt(0).toUpperCase()}</span>
-        <span class="who"><b>${c.name}</b><small>Level ${c.level} · ${pct}% to next</small></span></a>
+        <span class="mono">${esc(c.name.charAt(0).toUpperCase())}</span>
+        <span class="who"><b>${esc(c.name)}</b><small>Level ${c.level} · ${pct}% to next</small></span></a>
       <button class="phase" id="open-economy" data-p="${phase}" aria-label="Economy"><i></i><span>${cap(phase)}</span></button>
       <a class="cash" href="#/banking/account"><small>Cash</small><b>${money(c.cash)}</b></a>
       <span class="xp" style="--p:${pct}%"></span>` : '<span class="brand"></span>'}

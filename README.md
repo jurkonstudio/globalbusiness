@@ -32,7 +32,7 @@ global-business/
 
 ## Setup
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the SQL Editor run `supabase/migrations/001` to `006` in order (then `seed.sql`). In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
+2. In the SQL Editor run every file in `supabase/migrations/` in numeric order (001 to 010). `seed.sql` is intentionally empty; all data is seeded by the migrations. In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
 3. Put your Project URL and anon key in `src/config/supabase.js`.
 4. Push to GitHub, then enable **Settings > Pages > Deploy from branch (main, root)**.
 

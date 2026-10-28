@@ -2,6 +2,7 @@ import { supabase } from '../../core/supabase.js';
 import { state } from '../../core/state.js';
 import { shell, card } from '../../components/shell.js';
 import { mountGlobe } from '../../components/globe.js';
+import { esc } from '../../core/escape.js';
 
 const money = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
@@ -31,7 +32,7 @@ export function render() {
         <li>Build your first production building</li>
         <li>Stock your warehouse</li>
         <li>Sell goods on the marketplace</li></ul>`)}
-      ${card('Company name', `<div class="stack"><input id="rename" value="${c.name.replace(/"/g, '&quot;')}" maxlength="30" />
+      ${card('Company name', `<div class="stack"><input id="rename" value="${esc(c.name)}" maxlength="30" />
         <button class="btn" id="rename-go">Rename</button><p class="msg" id="rename-msg"></p></div>`)}
       ${card('Quick links', `<ul class="list">
         <li><a href="#/buildings/production">Buildings</a></li>
