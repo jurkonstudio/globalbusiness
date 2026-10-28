@@ -1,0 +1,15 @@
+:root { --bg:#0f172a; --panel:#1e293b; --text:#e2e8f0; --accent:#38bdf8; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+header { background:var(--panel); padding:.5rem 1rem; }
+header .logo { font-weight:700; color:var(--accent); }
+nav { display:flex; flex-wrap:wrap; gap:.75rem; margin-top:.5rem; }
+nav a, .tabs a { color:var(--text); text-decoration:none; padding:.25rem .5rem; border-radius:4px; }
+nav a.active, .tabs a.active { background:var(--accent); color:#000; }
+.tabs { display:flex; gap:.5rem; padding:.5rem 1rem; }
+.page { padding:1rem; max-width:1000px; margin:auto; }
+.auth { max-width:360px; display:flex; flex-direction:column; gap:.5rem; }
+input, button { padding:.5rem; border-radius:4px; border:0; }
+button { background:var(--accent); cursor:pointer; }
+.map-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:6px; }
+.map-slot { aspect-ratio:1; border:2px dashed #475569; display:flex; align-items:center; justify-content:center; color:#475569; border-radius:6px; }
