@@ -218,3 +218,159 @@ input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba
 .fab, .tool { border-radius:8px; }
 .hud.idle, .rl { border-radius:6px; }
 .bl-label, .rinfo { border-radius:4px; }
+/* === PERBAIKAN TOPBAR (Header) === */
+#topbar {
+  background: linear-gradient(180deg, #15283d 0%, #0d1b2a 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 12px 16px 0 16px;
+}
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+/* Brand & Level */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex: 1;
+}
+
+.brand .mono {
+  width: 42px; height: 42px;
+  background: var(--teal);
+  color: #fff;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 1.2rem; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(31, 157, 138, 0.4);
+}
+
+.brand .who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brand .who b {
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.3px;
+}
+
+.brand-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lvl-badge {
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.phase-chip {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.phase-chip[data-p="normal"] i { background: var(--teal); }
+.phase-chip[data-p="boom"] i { background: var(--gold); }
+.phase-chip[data-p="recession"] i { background: var(--coral); }
+.phase-chip i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+/* Currencies */
+.currencies {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.cur-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 110px;
+  text-decoration: none;
+}
+
+.cur-box small {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: #8da2b5;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.cur-box b {
+  font-size: 0.85rem;
+  color: #fff;
+  font-family: 'Space Grotesk', monospace;
+}
+
+.cur-box.cash b { color: #7fcf6f; } /* Warna hijau untuk cash */
+.cur-box.nexus b { color: #4fb3e0; } /* Warna biru/cyan untuk premium currency */
+
+/* XP Bar di Bawah */
+.xp-track {
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), #7fcf6f);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px var(--teal);
+}
+
+/* Floating Save Button untuk Guest */
+.floating-save {
+  position: absolute;
+  top: 100%; right: 16px;
+  margin-top: 8px;
+  background: var(--coral);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(228, 87, 46, 0.4);
+  z-index: 101;
+}
+.floating-save .ic { width: 14px; height: 14px; }
