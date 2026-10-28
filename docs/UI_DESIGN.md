@@ -2,7 +2,7 @@
 
 Original visual identity, deliberately different from the reference game.
 
-- **Top:** floating command card (monogram, company, level + XP line, economy phase chip, cash). No avatar/bell/pill cluster.
+- **Top:** icon-only header, no text labels: menu, company monogram, economy-phase dot, then a wallet stack on the right (row 1 cash, row 2 Global Token (GT) + level ring). The ring's gold arc is EXP progress toward the next level (`xp % 100`), the number inside is the level. GT comes from `companies.gt` (migration 016, read-only for players).
 - **Sub-nav:** scrollable labelled chips under the card (was a trapezoid icon bar above the tabs).
 - **Bottom:** floating pill dock; only the active tab shows its label.
 - **Menu:** left side panel with a 2-column card grid (was a full-width dropdown list).

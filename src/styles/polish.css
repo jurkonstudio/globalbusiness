@@ -15,6 +15,7 @@
   border-bottom: 1px solid #1f2937;
 }
 
+<<<<<<< HEAD
 /* 2. BUNUH SEMUA ELEMEN LAMA YANG NYASAR */
 #topbar .xp, 
 #topbar .cash, 
@@ -22,6 +23,12 @@
 #topbar .phase, 
 #topbar .who { 
   display: none !important; 
+=======
+/* ---- Small phones (320-360) ---- */
+@media (max-width:370px) {
+  .page { padding-left:10px; padding-right:10px; }
+  .hero .big { font-size:1.75rem; } .mt-v { font-size:1.25rem; }
+>>>>>>> 17bddfe (Header ikon-saja, tambah GT dan cincin level EXP)
 }
 
 /* 3. Sisi Kiri (Menu & Profil) */

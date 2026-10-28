@@ -32,3 +32,9 @@ export const timeAgo = (d) => {
   if (s < 86400) return Math.round(s / 3600) + ' h ago';
   return Math.round(s / 86400) + ' d ago';
 };
+
+// Global Token (GT): whole numbers up to 99,999, then compact (12.5k, 3.2M). Never has a currency symbol.
+export const gt = (n) => {
+  n = Number(n) || 0;
+  return Math.abs(n) >= 1e5 ? compact(n) : N0.format(n);
+};

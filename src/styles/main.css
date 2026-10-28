@@ -5,7 +5,7 @@
   --text:#1f2933; --muted:#5f6b78;
   --brand:#1f6fbf; --brand2:#23834a; --gold:#f5b400; --danger:#c0392b;
   --r:6px; --r-sm:4px;
-  --top-h:52px; --dock-h:58px;
+  --top-h:56px; --dock-h:58px;
   --font-head:'Space Grotesk','Segoe UI',system-ui,sans-serif;
   --font-body:'DM Sans','Segoe UI',system-ui,sans-serif;
   --shadow:0 2px 8px rgba(16,24,40,.18);
@@ -23,31 +23,42 @@ button { font-family:inherit; }
 .ic { width:1.5em; height:1.5em; fill:none; stroke:currentColor; stroke-width:1.8;
   stroke-linecap:round; stroke-linejoin:round; flex:none; }
 
-/* ---- Atas: bar penuh, datar ---- */
+/* ---- Atas: bar ikon saja (tanpa teks label) ---- */
 #topbar { flex:none; position:relative; z-index:30; display:flex; align-items:center; gap:8px; overflow:hidden;
   height:calc(var(--top-h) + env(safe-area-inset-top)); margin:0; padding:env(safe-area-inset-top) 10px 0 4px;
   background:var(--ink); color:#fff; border-radius:0; border-bottom:1px solid #0e141c; }
 #topbar:empty { display:none; }
-.hamb { position:relative; background:none; border:0; color:#c5d0dc; width:40px; height:40px; padding:8px; cursor:pointer; }
+.hamb { position:relative; background:none; border:0; color:#c5d0dc; width:40px; height:40px; padding:8px; cursor:pointer; flex:none; }
 .hamb .ic { width:100%; height:100%; stroke-width:2.2; }
 .dot { position:absolute; top:7px; right:7px; width:9px; height:9px; border-radius:50%; background:var(--gold); border:2px solid var(--ink); }
-.brand { display:flex; align-items:center; gap:9px; min-width:0; flex:1; }
-.mono { width:34px; height:34px; border-radius:6px; flex:none; display:grid; place-items:center;
-  background:var(--brand); font:700 1.05rem var(--font-head); }
-.who { display:flex; flex-direction:column; min-width:0; line-height:1.15; }
-.who b { font:600 .95rem var(--font-head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.who small { color:#9fb0c3; font-size:.72rem; }
-.phase { flex:none; display:flex; align-items:center; gap:5px; height:28px; padding:0 9px; border:0; cursor:pointer;
-  border-radius:4px; background:rgba(255,255,255,.08); color:#c5d0dc; font:600 .72rem var(--font-body); }
-.phase i { width:7px; height:7px; border-radius:50%; background:#4cc47a; }
-.phase[data-p="boom"] i { background:var(--gold); }
-.phase[data-p="recession"] i { background:#ef6a5b; }
-.cash { flex:none; display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; padding:4px 10px;
-  border-radius:4px; background:#0f1620; border:1px solid rgba(255,255,255,.12); }
-.cash small { font-size:.58rem; text-transform:uppercase; letter-spacing:.12em; color:#9fb0c3; }
-.cash b { font:700 1rem var(--font-head); color:#7fe0a0; }
-.xp { position:absolute; left:0; bottom:0; height:3px; width:var(--p,0%); background:var(--gold); }
-@media (max-width:370px) { .phase span { display:none; } .phase { padding:0 8px; } }
+.brand { display:flex; align-items:center; flex:none; }
+.mono { width:36px; height:36px; border-radius:8px; flex:none; display:grid; place-items:center;
+  background:var(--brand); font:700 1.05rem var(--font-head); box-shadow:inset 0 0 0 1px rgba(255,255,255,.18); }
+.phase { flex:none; display:grid; place-items:center; width:30px; height:30px; padding:0; border:0; cursor:pointer;
+  border-radius:8px; background:rgba(255,255,255,.08); }
+.phase i { width:9px; height:9px; border-radius:50%; background:#4cc47a; box-shadow:0 0 0 3px rgba(76,196,122,.22); }
+.phase[data-p="boom"] i { background:var(--gold); box-shadow:0 0 0 3px rgba(245,180,0,.25); }
+.phase[data-p="recession"] i { background:#ef6a5b; box-shadow:0 0 0 3px rgba(239,106,91,.25); }
+
+/* Dompet: baris 1 = cash, baris 2 = GT + cincin level/EXP */
+.wallet { margin-left:auto; flex:none; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.cash, .gt { display:flex; align-items:center; gap:6px; height:23px; padding:0 9px 0 6px; border-radius:6px;
+  background:#0f1620; border:1px solid rgba(255,255,255,.12); min-width:0; }
+.cash .ic, .gt .ic { width:16px; height:16px; stroke-width:2; }
+.cash .ic { color:#7fe0a0; }
+.cash b, .gt b { font:700 .9rem/1 var(--font-head); margin-left:auto; white-space:nowrap; }
+.cash b { color:#7fe0a0; }
+.gt b { color:#ffd25a; }
+.gt .ic { color:#f5b400; fill:rgba(245,180,0,.18); }
+.gtrow { display:flex; align-items:center; gap:5px; }
+.gtrow .gt { flex:1; }
+.lvl { position:relative; flex:none; width:26px; height:26px; margin:-1.5px 0; display:grid; place-items:center; }
+.lvl svg { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+.lvl circle { fill:#0f1620; stroke-width:3; }
+.lvl .trk { stroke:rgba(255,255,255,.16); }
+.lvl .bar { stroke:var(--gold); stroke-linecap:round; transition:stroke-dasharray .6s ease; }
+.lvl b { position:relative; font:700 .7rem/1 var(--font-head); color:#fff; font-variant-numeric:tabular-nums; }
+@media (max-width:370px) { #topbar { gap:6px; padding-right:8px; } .cash b, .gt b { font-size:.82rem; } .mono { width:32px; height:32px; } }
 
 /* ---- Sub-nav (gaya tab bergaris bawah diatur di polish.css) ---- */
 #subbar { flex:none; display:flex; gap:2px; overflow-x:auto; padding:0 6px; background:var(--card);
@@ -95,10 +106,9 @@ body.drawer-open #drawer { display:block; background:rgba(16,24,40,.55); }
 .d-item.out { width:100%; justify-content:center; background:none; border:1px solid rgba(255,255,255,.16); color:#ff9d8a; }
 
 /* Tombol akun (tamu) + tab sheet login */
-.acct { flex:none; display:flex; align-items:center; gap:5px; height:34px; padding:0 11px 0 9px; border:0; cursor:pointer;
-  border-radius:4px; background:var(--brand); color:#fff; font:700 .78rem var(--font-body); }
+.acct { flex:none; display:grid; place-items:center; width:34px; height:34px; padding:0; border:0; cursor:pointer;
+  border-radius:8px; background:var(--brand); color:#fff; }
 .acct .ic { width:18px; height:18px; }
-@media (max-width:420px) { .acct span { display:none; } .acct { width:34px; padding:0; justify-content:center; } }
 .seg { display:flex; padding:3px; gap:3px; border-radius:6px; background:var(--paper2); }
 .seg button { flex:1; height:36px; border:0; border-radius:4px; background:none; color:var(--muted); font:700 .85rem var(--font-body); cursor:pointer; }
 .seg button.on { background:var(--brand); color:#fff; }

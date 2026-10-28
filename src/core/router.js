@@ -44,7 +44,7 @@ async function autoCompany() {
   return false;
 }
 
-const topKey = () => JSON.stringify([state.company?.name, state.company?.cash, state.company?.level, state.company?.xp,
+const topKey = () => JSON.stringify([state.company?.name, state.company?.cash, state.company?.level, state.company?.xp, state.company?.gt,
   state.economy?.phase, state.alerts, !!state.user?.is_anonymous]);
 
 function paintChrome(where) {
