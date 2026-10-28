@@ -52,22 +52,31 @@ export async function mount() {
 }
 
 function sheet(x, stock, priceOf) {
+  const have = stock[x.id] ?? 0;
+  const ratio = Number(state.economy?.npc_buy_ratio ?? 0.6);
+  const sellPrice = Number(x.base_price) * ratio;
   const m = document.createElement('div');
   m.className = 'modal sheet';
   m.innerHTML = `<div class="card stack modal-box"><h3>${x.name}</h3>
-    <p class="muted">In stock: <b>${(stock[x.id] ?? 0).toLocaleString()}</b> · ${price(priceOf(x))} each</p>
-    ${x.npc_sells ? `<div class="row"><input type="number" min="1" value="10" id="qty" style="width:100px" />
+    <p class="muted">In stock: <b>${have.toLocaleString()}</b></p>
+    ${x.npc_sells ? `<p class="muted">Buy: ${price(priceOf(x))} each</p><div class="row"><input type="number" min="1" step="1" value="10" id="qty" style="width:100px" />
       <button class="btn" id="buy">Buy</button></div>` : '<p class="muted">Not sold by the NPC. Produce it or trade it on the Exchange.</p>'}
+    <p class="muted">Sell to NPC: ${price(sellPrice)} each</p>
+    <div class="row"><input type="number" min="1" step="1" max="${Math.floor(have)}" value="${Math.min(10, Math.floor(have)) || ''}" id="sqty" style="width:100px" ${have < 1 ? 'disabled' : ''} />
+      <button class="btn" id="sell" ${have < 1 ? 'disabled' : ''}>Sell</button></div>
     <button class="btn-ghost" id="no">Close</button></div>`;
   document.body.appendChild(m);
   m.onclick = async (e) => {
     if (e.target === m || e.target.id === 'no') return m.remove();
-    if (e.target.id !== 'buy') return;
+    const buying = e.target.id === 'buy', selling = e.target.id === 'sell';
+    if (!buying && !selling) return;
+    const qty = Math.floor(Number(m.querySelector(buying ? '#qty' : '#sqty').value));
+    if (!(qty >= 1)) { toast('Enter a quantity of at least 1.', true); return; }
     e.target.disabled = true;
-    const { data, error } = await supabase.rpc('buy_from_npc', { p_resource: x.id, p_qty: Number(m.querySelector('#qty').value) });
+    const { data, error } = await supabase.rpc(buying ? 'buy_from_npc' : 'sell_to_npc', { p_resource: x.id, p_qty: qty });
     if (error) { toast(error.message, true); e.target.disabled = false; return; }
     m.remove();
-    toast(`Bought for $${data}`);
+    toast(buying ? `Bought for $${data}` : `Sold for $${data}`);
     window.dispatchEvent(new Event('hashchange'));
   };
 }
