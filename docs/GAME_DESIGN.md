@@ -34,3 +34,24 @@ Players enter automatically as guests with $5,000 and Level 0:
 3. Plant apples on a Map land slot (builds an Apple Orchard for $1,000, uses 1 Seeds + 2 Water).
 4. Wait 3 minutes, collect the harvest: tutorial done, Level 1.
 A "Save your progress" dialog appears right after planting. Land is per company (24 slots); a shared world map comes later.
+
+## Early game (session 2, quest-log style)
+Start: $5,000, Level 0, guest account. The tutorial (name, seeds + water, plant apples, harvest) ends at Level 1.
+Then a **Missions** list (target icon on the map) pays cash and XP for the next goals: name the company, build
+Water Reservoir / Power Plant / Plantation, collect water, build in another region, own 5 buildings, reach Level 3.
+Missions are verified and paid by the server (`mission_status`, `claim_mission`).
+
+## World and regions
+Home Isle (L0, 24 plots, no freight), Verdant Coast (L2, farms +15%), Iron Ridge (L3, mines +15%),
+Port Meridian (L4, factories +15%), Sunspire Atoll (L5, utilities +15%). Remote regions add a land fee
+($500 per distance step) and a freight cost when harvesting (2% x distance x quantity x transport). Each company
+present in a region shows as a small hut on its shore (`region_activity`).
+
+## Timers and offline progress
+All progress is a timestamp in Postgres, never a browser timer.
+- Construction: `buildings.build_finish_at` (time from `building_types.build_seconds`).
+- Upgrades: `upgrade_finish_at`, cost = 60% of build cost x level, time = build time x level, max level 6.
+- Production / crops: `production_jobs.finish_at`.
+The map shows timers **only** for buildings under construction, upgrades, and the apple orchard crop.
+Closing the game changes nothing: on return the server settles finished upgrades and `welcome_back()` reports
+what completed while the player was away. Harvests wait in the building until collected.

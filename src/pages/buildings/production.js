@@ -12,7 +12,7 @@ export function render() {
 export async function mount() {
   const el = document.getElementById('prod');
   const [b, r, j] = await Promise.all([
-    supabase.from('buildings').select('id, abundance, building_types(id, name)').order('created_at'),
+    supabase.from('buildings').select('id, abundance, build_finish_at, upgrade_finish_at, upgrade_to, building_types(id, name)').order('created_at').then((r) => r.error ? supabase.from('buildings').select('id, abundance, building_types(id, name)').order('created_at') : r),
     supabase.from('recipes').select('id, building_type_id, output_qty, duration_seconds, resources(name), recipe_inputs(qty, resources(name))'),
     supabase.from('production_jobs').select('*').eq('collected', false),
   ]);
@@ -25,6 +25,10 @@ export async function mount() {
   el.innerHTML = buildings.map((bl) => {
     const t = bl.building_types;
     const job = jobs.find((x) => x.building_id === bl.id);
+    if (bl.build_finish_at && new Date(bl.build_finish_at) > Date.now())
+      return `<div class="card"><h3>${t.name}</h3><p>🔨 Under construction</p><p class="tag cd" data-finish="${bl.build_finish_at}"></p></div>`;
+    if (bl.upgrade_finish_at)
+      return `<div class="card"><h3>${t.name}</h3><p>⬆️ Upgrading to LVL ${bl.upgrade_to}</p><p class="tag cd" data-finish="${bl.upgrade_finish_at}"></p></div>`;
     const head = `<h3>${t.name}${bl.abundance ? ` · abundance ${bl.abundance}%` : ''}</h3>`;
     if (job) {
       const rc = recipes.find((x) => x.id === job.recipe_id);

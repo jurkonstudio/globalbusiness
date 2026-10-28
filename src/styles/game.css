@@ -50,3 +50,36 @@
   background:linear-gradient(90deg,transparent,var(--paper) 55%); pointer-events:none; }
 .swipe span { writing-mode:vertical-rl; font-size:.65rem; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-right:6px; }
 .swipe[hidden] { display:none; }
+
+/* ---- Session 2: regions, missions, world labels ---- */
+.hud.rbar { left:12px; right:72px; bottom:calc(var(--dock-h) + 34px + 66px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:6px; }
+.rinfo { align-self:flex-start; max-width:100%; padding:6px 11px; border-radius:12px; background:rgba(13,27,42,.78); color:#fff; font-size:.76rem; line-height:1.3; }
+.rchips, .fb-tabs { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.rchips::-webkit-scrollbar, .fb-tabs::-webkit-scrollbar { display:none; }
+.chip { flex:none; border:0; border-radius:999px; padding:7px 12px; background:rgba(255,253,248,.92); color:var(--ink); font:600 .76rem var(--font-body); box-shadow:var(--shadow); cursor:pointer; white-space:nowrap; }
+.chip.on { background:var(--ink); color:#fff; }
+.chip.lock { opacity:.7; }
+.fb-tabs { grid-column:1/-1; }
+.tool { position:relative; font-size:1.35rem; }
+.badge { position:absolute; right:-4px; top:-4px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--brand); color:#fff; font:700 .68rem/18px var(--font-body); text-align:center; font-style:normal; }
+.badge[hidden] { display:none; }
+
+/* island name tags (shown when zoomed out) */
+.rl { position:absolute; left:0; top:0; display:flex; flex-direction:column; align-items:center; will-change:transform; padding:5px 11px; border-radius:12px;
+  background:rgba(255,253,248,.92); box-shadow:var(--shadow); text-align:center; white-space:nowrap; }
+.rl b { font:700 .8rem var(--font-head); color:var(--ink); }
+.rl small { font-size:.64rem; color:var(--muted); }
+.rl.locked { background:rgba(13,27,42,.78); }
+.rl.locked b, .rl.locked small { color:#fff; }
+
+/* missions sheet */
+.ms-box { max-height:80vh; overflow:auto; }
+.ms-list { display:flex; flex-direction:column; gap:8px; }
+.ms-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+.ms-row b { display:block; font-size:.9rem; }
+.ms-row small { display:block; color:var(--muted); font-size:.76rem; margin:2px 0; }
+.ms-row em { font-style:normal; font-size:.72rem; font-weight:700; color:var(--gold); }
+.ms-row.ready { border-color:var(--brand2); }
+.ms-row.claimed { opacity:.55; }
+.ms-tag { font-weight:700; color:var(--brand2); }
+.ms-tag.dim { color:var(--muted); }

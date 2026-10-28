@@ -17,6 +17,6 @@ export async function mount() {
   if (error || !data?.length) { list.textContent = 'No buildings found. Run the SQL migrations.'; return; }
   list.innerHTML = data.map((b) => `<div class="card">
     <h3>${b.category}</h3><div class="stat" style="font-size:1.15rem">${b.name}</div>
-    <p class="muted">${b.description ?? ''}</p><p class="tag">${money(b.build_cost)}</p>
+    <p class="muted">${b.description ?? ''}</p><p class="tag">${money(b.build_cost)}${b.build_seconds ? ` · ${b.build_seconds >= 60 ? Math.round(b.build_seconds / 60) + ' min' : b.build_seconds + 's'} build` : ''}</p>
     ${state.company.level >= b.unlock_level ? '' : `<span class="muted">Unlocks at level ${b.unlock_level}</span>`}</div>`).join('');
 }

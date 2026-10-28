@@ -3,7 +3,7 @@
 A browser-based business and economy simulation game, inspired by *Sim Companies*.
 Build companies, produce goods, trade on the market, and grow your empire.
 
-> Status: early development. The map is now a 3D island (session 1) with 24 land plots.
+> Status: early development. The map is a 3D archipelago (session 2): 5 regions, sea lanes, day/night, server-side timers.
 
 ## Tech Stack
 - **Frontend:** HTML, CSS, vanilla JavaScript (ES modules), hosted on GitHub Pages
@@ -32,7 +32,7 @@ global-business/
 
 ## Setup
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the SQL Editor run `supabase/migrations/001`, `002`, `003`, `004` in order (then `seed.sql`). In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
+2. In the SQL Editor run `supabase/migrations/001` to `006` in order (then `seed.sql`). In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
 3. Put your Project URL and anon key in `src/config/supabase.js`.
 4. Push to GitHub, then enable **Settings > Pages > Deploy from branch (main, root)**.
 

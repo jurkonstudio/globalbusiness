@@ -17,3 +17,10 @@ Camera: one-finger rotate, pinch zoom, two-finger pan, wheel zoom. Tap a plot to
 (opens the existing build / building sheet in `landGrid.js`). Buildings are procedural low-poly
 models per slug; timers and "Ready" markers are projected as HTML labels.
 Falls back to a plain 2D grid if WebGL is unavailable.
+
+# 3D map (session 2)
+
+`map3d.js` renders five islands. Tap an island (or a region chip) to fly there; tap a plot to build.
+Locked islands are greyed with a lock tag. Dashed sea lanes link islands; ships sail the unlocked ones.
+Lighting follows the device clock (dawn, day, dusk, night with lamps and stars); there is no manual time control.
+Floating timers appear only on construction sites, upgrading buildings, and apple orchards.
