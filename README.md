@@ -27,7 +27,7 @@ global-business/
 │   └── pages/<module>/<section>.js
 ├── tools/             # gen-textures.py regenerates src/assets/textures
 ├── supabase/
-│   ├── migrations/    # 001_init.sql ... 012_hardening.sql, run in numeric order
+│   ├── migrations/    # 001_init.sql ... 021_ranking_search.sql, run in numeric order (skip 020, it is a draft)
 │   ├── ops/           # read-only SQL for checks and backups (not migrations)
 │   └── seed.sql
 └── docs/
@@ -35,7 +35,7 @@ global-business/
 
 ## Setup
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the SQL Editor run every file in `supabase/migrations/` in numeric order (001 to 012). Before each new migration, take a baseline and backup with `supabase/ops/M0_baseline_and_backup.sql`. `seed.sql` is intentionally empty; all data is seeded by the migrations. In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
+2. In the SQL Editor run every file in `supabase/migrations/` in numeric order (001 to 019, then 021). **Do not run `020_parcels_draft.sql`**: it is a draft for the parcel model and is not finished. Run each file once; a file that is safe to re-run says so in its first lines. Before each new migration, take a baseline and backup with `supabase/ops/M0_baseline_and_backup.sql`. `seed.sql` is intentionally empty; all data is seeded by the migrations. In Authentication > Sign In / Providers, enable **Allow anonymous sign-ins**.
 3. Put your Project URL and anon key in `src/config/supabase.js`.
 4. Push to GitHub, then enable **Settings > Pages > Deploy from branch (main, root)**.
 

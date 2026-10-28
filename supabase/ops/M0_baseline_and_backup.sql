@@ -34,6 +34,11 @@ with expected(sig, player) as (values
   ('sync_progress()', true), ('welcome_back()', true), ('touch_seen()', true),
   ('should_prompt_save()', true), ('mark_save_prompted()', true), ('region_activity()', true),
   ('upgrade_cost(numeric,integer)', true), ('upgrade_seconds(integer,integer)', true),
+  ('demolish_building(uuid)', true), ('demolish_value(numeric,integer)', true), ('plot_kind(text,integer)', true),
+  ('remove_store_listing(uuid,integer)', true), ('set_store_listing(uuid,integer,numeric)', true), ('retail_sync()', true),
+  ('retail_demand(numeric,numeric)', true), ('retail_rate_per_min(integer,numeric,numeric)', true), ('retail_settle(uuid)', false),
+  ('exchange_price_history(integer,integer)', true), ('exchange_recent_trades(integer,integer)', true), ('set_order_seller_name()', false),
+  ('ranking_companies(text,integer)', true), ('search_companies(text)', true),
   ('apply_cash(uuid,numeric,text,integer,numeric,text)', false), ('add_stock(uuid,integer,numeric)', false),
   ('settle_buildings(uuid)', false), ('mission_done(uuid,text)', false), ('handle_new_user()', false)
 ), priv as (
@@ -99,7 +104,7 @@ select now() as taken_at,
 
 -- Q2 ---------------------------------------------------------------------------------------
 -- Effective EXECUTE rights (includes the implicit PUBLIC grant) of the roles the browser uses.
--- Expected: anon can run nothing; authenticated can run exactly the 22 game functions,
+-- Expected: anon can run nothing; authenticated can run exactly the game functions listed in `expected` (kept up to date through migration 021),
 -- not the 5 internal helpers. Failures sort first, so the first row tells the story.
 with expected(sig, player) as (values
   ('create_company(text)', true), ('rename_company(text)', true),
@@ -112,6 +117,11 @@ with expected(sig, player) as (values
   ('sync_progress()', true), ('welcome_back()', true), ('touch_seen()', true),
   ('should_prompt_save()', true), ('mark_save_prompted()', true), ('region_activity()', true),
   ('upgrade_cost(numeric,integer)', true), ('upgrade_seconds(integer,integer)', true),
+  ('demolish_building(uuid)', true), ('demolish_value(numeric,integer)', true), ('plot_kind(text,integer)', true),
+  ('remove_store_listing(uuid,integer)', true), ('set_store_listing(uuid,integer,numeric)', true), ('retail_sync()', true),
+  ('retail_demand(numeric,numeric)', true), ('retail_rate_per_min(integer,numeric,numeric)', true), ('retail_settle(uuid)', false),
+  ('exchange_price_history(integer,integer)', true), ('exchange_recent_trades(integer,integer)', true), ('set_order_seller_name()', false),
+  ('ranking_companies(text,integer)', true), ('search_companies(text)', true),
   ('apply_cash(uuid,numeric,text,integer,numeric,text)', false), ('add_stock(uuid,integer,numeric)', false),
   ('settle_buildings(uuid)', false), ('mission_done(uuid,text)', false), ('handle_new_user()', false)
 ), actual as (
