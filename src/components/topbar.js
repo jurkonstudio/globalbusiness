@@ -7,6 +7,9 @@ import { money } from '../core/format.js';
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
+// SVG Berlian untuk Nexus
+const GEM_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:2px;"><path d="M12 2L2 9l10 13 10-13L12 2zm0 2.5l6.5 5.5H5.5L12 4.5zM5.5 11h5v8l-5-8zm8 0h5l-5 8v-8z"/></svg>`;
+
 export function renderTopbar() {
   const el = document.getElementById('topbar');
   const c = state.company;
@@ -29,11 +32,11 @@ export function renderTopbar() {
       <button class="phase" id="open-economy" data-p="${phase}" aria-label="Economy phase: ${cap(phase)}"><i></i><span>${cap(phase)}</span></button>
       
       <div class="cur-stack">
-        <a class="cash" href="#/banking/account" aria-label="Cash ${money(c.cash)}. Open account">
+        <a class="cur-box cash" href="#/banking/account" aria-label="Cash ${money(c.cash)}. Open account">
           <small>Cash</small><b>${money(c.cash)}</b>
         </a>
-        <div class="nexus" aria-label="Nexus ${nexus}">
-          <small>Nexus</small><b>${money(nexus)}</b>
+        <div class="cur-box nexus" aria-label="Nexus ${nexus}">
+          <small>Nexus</small><b>${GEM_SVG} ${money(nexus)}</b>
         </div>
       </div>
       
