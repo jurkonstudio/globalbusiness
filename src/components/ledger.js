@@ -7,9 +7,10 @@ import { qty, money2, signed2, dateTime } from '../core/format.js';
 export const KIND_LABEL = {
   npc_buy: 'Bought from NPC', npc_sell: 'Sold to NPC', build: 'Construction', upgrade: 'Upgrade',
   freight: 'Freight fee', mission: 'Mission reward', exchange_buy: 'Bought on Market', exchange_sell: 'Sold on Market', retail_sale: 'Store sales',
+  contract_buy: 'Contract purchase', contract_sell: 'Contract sale',
 };
 export const kindLabel = (k) => KIND_LABEL[k] ?? k;
-export const GOODS_KINDS = ['npc_buy', 'npc_sell', 'exchange_buy', 'exchange_sell', 'retail_sale', 'freight'];
+export const GOODS_KINDS = ['npc_buy', 'npc_sell', 'exchange_buy', 'exchange_sell', 'retail_sale', 'freight', 'contract_buy', 'contract_sell'];
 export const PAGE_CAP = 1000;   // Supabase returns at most this many rows per request
 
 // -> { rows, error, capped }.  `capped` = the request hit the row cap, so totals may be incomplete.
