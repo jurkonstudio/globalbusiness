@@ -130,7 +130,15 @@ export async function mountLandGrid() {
   if (!inline && kept) { if (stage !== kept.stage) stage.replaceWith(kept.stage); map = kept.map; }
   else {
     const opts = { level: state.company.level, onPick, keepAlive: !inline, onRegion: (id) => regionUI(id), onTimerDone: () => reload() };
-    map = (await mountMap3d(stage, opts)) ?? (await mountMapIso(stage, opts));   // real 3D; the 2D isometric map only if WebGL is unavailable
+    let why = '';
+    try { map = await mountMap3d(stage, opts); why = mountMap3d.why; }
+    catch (e) { console.error('[map3d]', e); why = `error in map3d.js: ${e.message}`; stage.querySelector('canvas')?.remove(); map = null; }
+    if (map) { stage.dataset.renderer = '3d'; console.info('[map] 3D renderer active'); }
+    else {                                                                       // 2D isometric map only when 3D cannot start
+      stage.dataset.renderer = '2d'; console.warn('[map] using 2D map:', why);
+      toast(`3D map unavailable: ${why || 'unknown reason'}. Showing the 2D map.`, true);
+      map = await mountMapIso(stage, opts);
+    }
     if (map && !inline) kept = { stage, map };
   }
   reload = () => { if (document.getElementById('map-stage')) mountLandGrid(); };

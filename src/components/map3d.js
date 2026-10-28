@@ -20,10 +20,11 @@ const rowsOf = (r) => Math.ceil(r.slots / r.cols);
 const plotPos = (r, slot) => [r.x + ((slot % r.cols) - (r.cols - 1) / 2) * PS, r.z + (Math.floor(slot / r.cols) - (rowsOf(r) - 1) / 2) * PS];
 
 export async function mountMap3d(stage, { level = 0, onPick, onRegion, onTimerDone, onHub } = {}) {
-  try { await loadThree(); } catch { return null; }
+  mountMap3d.why = '';
+  try { await loadThree(); } catch { mountMap3d.why = 'three.js could not be downloaded from cdnjs.cloudflare.com (blocked or offline)'; return null; }
   const T = window.THREE;
   let renderer;
-  try { renderer = new T.WebGLRenderer({ antialias: true }); } catch { return null; }
+  try { renderer = new T.WebGLRenderer({ antialias: true }); } catch { mountMap3d.why = 'this browser has WebGL turned off or unsupported'; return null; }
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   const canvas = renderer.domElement; stage.prepend(canvas);
 
