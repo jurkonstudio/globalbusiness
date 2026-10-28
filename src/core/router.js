@@ -43,6 +43,7 @@ export async function route() {
   const mod = MODULES.find(m => m.id === moduleId) || MODULES[0];
   const sub = mod.subs.find(s => s.id === subId) || mod.subs[0];
   renderNav(mod.id);
+  document.querySelector("#nav a.active")?.scrollIntoView({ inline: "center", block: "nearest" });
   const page = await import(`../pages/${mod.id}/${sub.id}.js`);
   app().innerHTML = renderTabs(mod, sub.id) + page.render();
   page.mount?.();

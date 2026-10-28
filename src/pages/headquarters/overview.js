@@ -1,6 +1,7 @@
 import { supabase } from '../../core/supabase.js';
 import { state } from '../../core/state.js';
 import { shell, card } from '../../components/shell.js';
+import { mountGlobe } from '../../components/globe.js';
 
 const money = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
@@ -18,6 +19,8 @@ export function render() {
   }
 
   return shell('Headquarters', 'Overview', `
+    <div class="globe" id="globe"></div>
+    <div style="height:.75rem"></div>
     <div class="grid">
       ${card('Cash', `<div class="stat cash">${money(c.cash)}</div>`)}
       ${card('Company level', `<div class="stat">${c.level}</div>`)}
@@ -48,6 +51,8 @@ export function mount() {
     };
     return;
   }
+  const g = document.getElementById('globe');
+  if (g) mountGlobe(g);
   supabase.from('buildings').select('id', { count: 'exact', head: true }).then(({ count }) => {
     const el = document.getElementById('building-count');
     if (el) el.textContent = count ?? 0;
