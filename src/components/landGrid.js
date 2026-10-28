@@ -7,7 +7,8 @@ import { confirmDialog, busy, classifyError, statusChip } from './ui.js';
 import { esc } from '../core/escape.js';
 import { missingFor } from '../core/ops.js';
 import { qty, money2 } from '../core/format.js';
-import { MAX_PRICE_X, perMinute, demand, EMOJI as RETAIL_EMOJI } from './retailCore.js';
+import { MAX_PRICE_X, perMinute, demand } from './retailCore.js';
+import { resIcon } from './resourceIcons.js';
 import { REGIONS, REGION, BONUS_LABEL, landFee, PLOT_KINDS, plotKind, plotAllows, plotCounts } from '../config/regions.js';
 import { loadMissions, claimable, openMissions } from './missions.js';
 import { openQuick, closeQuick } from './mapQuick.js';
@@ -318,7 +319,7 @@ function openBuilding(x) {
       const p = prods().find((q) => q.id === l.resource_id); if (!p) return '';
       const ref = Number(p.retail_ref), price = Number(l.price), have = ctx.stock[p.id] ?? 0;
       const chip = have < 1 ? statusChip('Out of stock', 'bad') : demand(price, ref) === 0 ? statusChip('Too expensive', 'warn') : statusChip(`≈ ${qty(perMinute(lvl, price, ref))}/min`, 'ok');
-      return `<div class="rt-row" data-r="${p.id}"><div class="rt-top"><b>${RETAIL_EMOJI[p.slug] ?? '📦'} ${esc(p.name)}</b>${chip}</div>
+      return `<div class="rt-row" data-r="${p.id}"><div class="rt-top"><b style="display:inline-flex;gap:6px;align-items:center">${resIcon(p.slug, 22)} ${esc(p.name)}</b>${chip}</div>
         <div class="fld"><label for="sp-${p.id}">Price (reference ${money2(ref)})</label>
           <input id="sp-${p.id}" type="number" inputmode="decimal" min="0.01" max="${(ref * MAX_PRICE_X).toFixed(2)}" step="0.01" value="${price.toFixed(2)}" /></div>
         <dl class="sum"><div><dt>In warehouse</dt><dd class="num">${qty(have)}</dd></div><div><dt>Sold so far</dt><dd class="num">${qty(l.sold_total)} · ${money2(l.revenue_total)}</dd></div></dl>

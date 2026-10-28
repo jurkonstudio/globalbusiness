@@ -4,7 +4,8 @@ import { shell } from '../../components/shell.js';
 import { esc } from '../../core/escape.js';
 import { skeleton, errorBlock, stateBlock } from '../../components/ui.js';
 import { money2, qty } from '../../core/format.js';
-import { EMOJI, perMinute, demand } from '../../components/retailCore.js';
+import { perMinute, demand } from '../../components/retailCore.js';
+import { resIcon } from '../../components/resourceIcons.js';
 
 export function render() {
   return shell('Retail', 'Pricing', `<div id="pr">${skeleton(3, 80)}</div>`);
@@ -22,7 +23,7 @@ export async function mount() {
   el.innerHTML = `<p class="muted" style="margin-top:0">Customers compare your price to the <b>reference price</b>. Lower sells faster, higher sells slower. Numbers below are for one store at level 1; multiply by your store level.</p>
     ${data.map((p) => {
       const ref = Number(p.retail_ref);
-      return `<div class="bcard s-idle" style="margin-bottom:.75rem"><div class="hd"><h3>${EMOJI[p.slug] ?? '📦'} ${esc(p.name)}</h3></div>
+      return `<div class="bcard s-idle" style="margin-bottom:.75rem"><div class="hd"><h3 style="display:inline-flex;gap:8px;align-items:center">${resIcon(p.slug, 26)} ${esc(p.name)}</h3></div>
         <dl class="sum"><div><dt>Reference price</dt><dd class="num">${money2(ref)}</dd></div>
           <div><dt>NPC buys at (Warehouse)</dt><dd class="num">${money2(Number(p.base_price) * ratio)}</dd></div></dl>
         <table class="tbl"><thead><tr><th>Price</th><th>Items / min</th><th>Income / min</th></tr></thead><tbody>
