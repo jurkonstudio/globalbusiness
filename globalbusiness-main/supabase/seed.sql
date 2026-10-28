@@ -1,0 +1,4 @@
+-- Intentionally empty.
+-- All game data (resources, buildings, recipes, regions, missions) is seeded inside the numbered
+-- migrations in supabase/migrations/. The old placeholder rows that used to live here
+-- (wood, iron-ore, lumber-mill) conflicted with migration 002 and are no longer inserted.
