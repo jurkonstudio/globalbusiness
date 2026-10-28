@@ -13,15 +13,33 @@ export function renderTopbar() {
   const xp = Number(c?.xp ?? 0), pct = xp % 100;
   const phase = state.economy?.phase || 'normal';
   const name = esc(c?.name ?? '');
+  const nexus = Number(c?.nexus ?? 0);
+
   el.innerHTML = `
     <button class="hamb" id="open-drawer" aria-label="Menu${state.alerts ? ', ' + state.alerts + ' production ready' : ''}" aria-expanded="false" aria-controls="drawer">${ic('menu')}${state.alerts ? '<i class="dot"></i>' : ''}</button>
     ${c ? `<a class="brand" href="#/headquarters/overview" aria-label="Headquarters, ${name}">
         <span class="mono" aria-hidden="true">${esc(c.name.charAt(0).toUpperCase())}</span>
-        <span class="who"><b>${name}</b><small>Level ${c.level} · ${pct}% to next</small></span></a>
+        <span class="who">
+          <b>${name}</b>
+          <div class="brand-sub">
+            <span class="lvl-badge">LVL ${c.level}</span>
+            <span class="xp-text">${pct}% to next</span>
+          </div>
+        </span></a>
       <button class="phase" id="open-economy" data-p="${phase}" aria-label="Economy phase: ${cap(phase)}"><i></i><span>${cap(phase)}</span></button>
-      <a class="cash" href="#/banking/account" aria-label="Cash ${money(c.cash)}. Open account"><small>Cash</small><b>${money(c.cash)}</b></a>
+      
+      <div class="cur-stack">
+        <a class="cash" href="#/banking/account" aria-label="Cash ${money(c.cash)}. Open account">
+          <small>Cash</small><b>${money(c.cash)}</b>
+        </a>
+        <div class="nexus" aria-label="Nexus ${nexus}">
+          <small>Nexus</small><b>${money(nexus)}</b>
+        </div>
+      </div>
+      
       <span class="xp" style="--p:${pct}%" aria-hidden="true"></span>` : '<span class="brand"></span>'}
     ${isGuest() ? `<button class="acct" id="open-auth" aria-label="Save your game">${ic('exec')}<span>Save game</span></button>` : ''}`;
+  
   document.getElementById('open-auth')?.addEventListener('click', () => openAuthPanel('signup'));
   document.getElementById('open-drawer').onclick = toggleDrawer;
   document.getElementById('open-economy')?.addEventListener('click', openEconomy);
