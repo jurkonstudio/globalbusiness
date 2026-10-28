@@ -2,11 +2,11 @@ import { supabase } from '../core/supabase.js';
 import { state } from '../core/state.js';
 import { toast } from './toast.js';
 import { ic } from '../config/icons.js';
-import { mountMap3D } from './map3d.js';
+import { mountMap2D } from './map2d.js';
 import { REGIONS, REGION, BONUS_LABEL, landFee } from '../config/regions.js';
 import { loadMissions, claimable, openMissions } from './missions.js';
 
-const ICON = { agriculture: '🌳', utility: '⚡', extraction: '⛏️', construction: '🧱' };
+const ICON = { agriculture: '🌳', utility: '⚡', extraction: '⛏️', construction: '🧱', retail: '🛒' };
 const money = (n) => '$' + Number(n).toLocaleString('en-US');
 const dur = (s) => s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : s >= 60 ? `${Math.floor(s / 60)}m` : `${s}s`;
 const MAX_LEVEL = 6;
@@ -15,7 +15,7 @@ const upgradeSecs = (bt, lvl) => Math.max(bt.build_seconds ?? 0, 60) * lvl;
 
 // The 3D scene mounts into #map-stage. `inline` = embedded in a normal page (Land Slots), no HUD.
 export const landGridHtml = (inline = false) => `<div id="map-stage" class="map-stage${inline ? ' inline' : ''}">
-    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to rotate · pinch to zoom · tap an island</div>'}</div>
+    <div id="map-fallback" hidden></div>${inline ? '' : '<div class="map-hint" id="map-hint">Drag to pan · pinch to zoom · tap a plot to build</div>'}</div>
   ${inline ? '' : `<div class="hud rbar"><div class="rinfo" id="map-rinfo"></div><div class="rchips" id="map-chips"></div></div>
   <a class="hud idle" href="#/buildings/production" id="idle-box"></a>
   <div class="hud tools">
@@ -58,7 +58,8 @@ function onPick(region, slot) {
   if (x) return openBuilding(x);
   if (!state.company.tutorial_done) {
     if (region !== 'home') { toast('Finish the tutorial on Home Isle first.'); return; }
-    if (ctx.hasOrchard) { toast('Wait for your apples to grow first.'); return; }
+    if (ctx.hasOrchard && lvl < 1) { toast('Wait for your apples to grow, then collect them.'); return; }
+    if (ctx.hasStore) { toast('Open Retail > Stores and put your apples on sale.'); return; }
   }
   choose(region, slot, ctx.types);
 }
@@ -94,7 +95,7 @@ export async function mountLandGrid() {
   let map;
   if (!inline && kept) { if (stage !== kept.stage) stage.replaceWith(kept.stage); map = kept.map; }
   else {
-    map = await mountMap3D(stage, { level: state.company.level, onPick, keepAlive: !inline,
+    map = await mountMap2D(stage, { level: state.company.level, onPick, keepAlive: !inline,
       onRegion: (id) => regionUI(id), onTimerDone: () => reload() });
     if (map && !inline) kept = { stage, map };
   }
@@ -103,13 +104,15 @@ export async function mountLandGrid() {
   const { b, t, j } = await dataP;
   const jobOf = Object.fromEntries(j.map((x) => [x.building_id, x]));
   const bySlot = Object.fromEntries(b.map((x) => [`${x.region_id ?? 'home'}:${x.slot}`, x]));
-  ctx = { bySlot, types: t, jobOf, hasOrchard: b.some((x) => x.building_types.slug === 'apple-orchard') };
+  ctx = { bySlot, types: t, jobOf, hasOrchard: b.some((x) => x.building_types.slug === 'apple-orchard'),
+          hasStore: b.some((x) => x.building_types.slug === 'grocery-store') };
 
   if (!map) return fallback2D(stage);                           // no WebGL / three.js blocked
   map.setLevel(state.company.level);
   const items = b.map((x) => ({
     region: x.region_id ?? 'home', slot: x.slot, level: x.level ?? 1, slug: x.building_types.slug, name: x.building_types.name,
     category: x.building_types.category, ...timerOf(x, jobOf),
+    flow: x.building_types.category === 'retail' ? !(x.build_finish_at && new Date(x.build_finish_at) > Date.now()) : !!jobOf[x.id],
   }));
   const sig = JSON.stringify(items);
   if (inline || sig !== lastSig) { map.setBuildings(items); if (!inline) lastSig = sig; }   // skip rebuild when nothing changed
@@ -148,11 +151,12 @@ async function refreshBadge() {
 let hiddenAt = 0, watching = false;
 async function welcome() {
   const { data } = await supabase.rpc('welcome_back');
-  if (!data || data.away_seconds < 120 || !(data.built || data.upgraded || data.ready)) return;
+  if (!data || data.away_seconds < 120 || !(data.built || data.upgraded || data.ready || Number(data.sold) > 0)) return;
   const rows = [
     data.built ? `🔨 ${data.built} building${data.built > 1 ? 's' : ''} finished construction` : '',
     data.upgraded ? `⬆️ ${data.upgraded} upgrade${data.upgraded > 1 ? 's' : ''} completed` : '',
     data.ready ? `🍎 ${data.ready} production run${data.ready > 1 ? 's' : ''} ready to collect` : '',
+    Number(data.sold) > 0 ? `🛒 Your stores sold ${Number(data.sold)} item${Number(data.sold) > 1 ? 's' : ''} for ${money(Number(data.revenue))}` : '',
   ].filter(Boolean);
   const m = document.createElement('div');
   m.className = 'modal sheet';
@@ -212,8 +216,8 @@ function openBuilding(x) {
   m.className = 'modal sheet';
   m.innerHTML = `<div class="card stack modal-box"><h3>${bt.name} · LVL ${lvl}</h3>
     <p class="muted">${REGION[x.region_id ?? 'home'].name}${status ? ' · ' + status : ''}</p>
-    <p class="muted">Capacity ×${lvl}${lvl < MAX_LEVEL ? ` → ×${lvl + 1} after upgrade` : ''}</p>
-    ${busy ? '' : '<a class="btn" href="#/buildings/production">Production</a>'}
+    <p class="muted">${bt.category === 'retail' ? 'Sales speed' : 'Capacity'} ×${lvl}${lvl < MAX_LEVEL ? ` → ×${lvl + 1} after upgrade` : ''}</p>
+    ${busy ? '' : bt.category === 'retail' ? '<a class="btn" href="#/retail/stores">Open store</a>' : '<a class="btn" href="#/buildings/production">Production</a>'}
     ${lvl >= MAX_LEVEL ? '<p class="muted">Maximum level reached.</p>'
       : busy ? '' : `<button class="btn-ghost" id="up">Upgrade to LVL ${lvl + 1} · ${money(cost)} · ${dur(secs)}</button>`}
     <button class="btn-ghost" id="no">Close</button></div>`;
@@ -230,29 +234,66 @@ function openBuilding(x) {
   };
 }
 
+const CAT_LABEL = { agriculture: '🌾 Farm', retail: '🛒 Retail', utility: '⚡ Utility', extraction: '⛏️ Mining', construction: '🧱 Industry' };
+const CAT_ORDER = ['agriculture', 'retail', 'utility', 'extraction', 'construction'];
+const TYPE_EMOJI = { 'apple-orchard': '🍎', plantation: '🌾', 'water-reservoir': '💧', 'power-plant': '⚡', mine: '⛏️', quarry: '🪨', 'brick-factory': '🏭', 'grocery-store': '🛒' };
+
+// Build sheet: category tabs (Farm, Retail, ...) and one card per building. During the tutorial only the next
+// building is offered: the orchard first, then the Grocery Store after the first harvest.
 function choose(region, slot, types) {
-  const tutorial = !state.company.tutorial_done, r = REGION[region];
-  const avail = tutorial
-    ? types.filter((x) => x.slug === 'apple-orchard')
-    : types.filter((x) => x.unlock_level <= state.company.level);
+  const tutorial = !state.company.tutorial_done, r = REGION[region], lvl = state.company.level;
+  const orchardDone = tutorial && lvl >= 1;
+  const list = tutorial ? types.filter((x) => x.slug === (orchardDone ? 'grocery-store' : 'apple-orchard')) : types;
+  if (!list.length) { toast('The Grocery Store is not installed yet. Run migration 013 in Supabase.', true); return; }
+  const cats = CAT_ORDER.filter((c) => list.some((x) => x.category === c));
+  for (const x of list) if (!cats.includes(x.category)) cats.push(x.category);
+  let cat = cats[0], pick = null;
+  const costOf = (x) => Number(x.build_cost) + landFee(r);
   const m = document.createElement('div');
   m.className = 'modal sheet';
   m.innerHTML = `<div class="card stack modal-box"><h3>${r.name} · plot ${slot + 1}</h3>
-    <select id="bt">${avail.map((x) => `<option value="${x.slug}">${x.name} · ${money(Number(x.build_cost) + landFee(r))}${x.build_seconds ? ' · ' + dur(x.build_seconds) : ''}</option>`).join('')}</select>
-    <p class="muted">${tutorial ? 'Planting uses 1 Seeds and 2 Water from your warehouse and starts growing apples.'
-      : `Construction runs on the server, so it finishes even if you close the game.${r.distance ? ` Includes a ${money(landFee(r))} land fee.` : ''}`}</p>
-    <button class="btn" id="go">${tutorial ? 'Plant apples' : 'Build'}</button>
+    ${cats.length > 1 ? '<div class="bs-tabs" id="bs-tabs"></div>' : ''}
+    <div class="bs-list" id="bs-list"></div>
+    <p class="muted" id="bs-note"></p>
+    <button class="btn" id="go"></button>
     <button class="btn-ghost" id="no">Cancel</button></div>`;
   document.body.appendChild(m);
-  m.querySelector('#no').onclick = () => m.remove();
-  m.querySelector('#go').onclick = async (e) => {
+  const $ = (q) => m.querySelector(q);
+  function paint() {
+    const tabs = $('#bs-tabs');
+    if (tabs) tabs.innerHTML = cats.map((c) => `<button class="bs-tab${c === cat ? ' on' : ''}" data-cat="${c}">${CAT_LABEL[c] ?? c}</button>`).join('');
+    const items = list.filter((x) => x.category === cat);
+    if (!items.some((x) => x.slug === pick)) pick = (items.find((x) => x.unlock_level <= lvl) ?? items[0])?.slug;
+    $('#bs-list').innerHTML = items.map((x) => {
+      const locked = !tutorial && lvl < x.unlock_level;
+      return `<button class="bs-card${x.slug === pick ? ' on' : ''}" data-pick="${x.slug}" ${locked ? 'disabled' : ''}>
+        <span class="em">${TYPE_EMOJI[x.slug] ?? '🏭'}</span>
+        <span><b>${x.name}</b><small>${locked ? `🔒 Unlocks at Level ${x.unlock_level}` : x.description ?? ''}</small></span>
+        <span class="px">${money(costOf(x))}${x.build_seconds ? `<small>${dur(x.build_seconds)}</small>` : ''}</span></button>`;
+    }).join('');
+    const x = list.find((y) => y.slug === pick);
+    $('#bs-note').textContent = tutorial
+      ? (orchardDone ? 'Your store sells apples to customers while you play, and even while you are away. It takes about a minute to build.'
+        : 'Planting uses 1 Seeds and 2 Water from your warehouse and starts growing apples.')
+      : `Construction runs on the server, so it finishes even if you close the game.${r.distance ? ` Includes a ${money(landFee(r))} land fee.` : ''}`;
+    const go = $('#go');
+    go.textContent = tutorial && !orchardDone ? 'Plant apples' : x ? `Build ${x.name}` : 'Build';
+    go.disabled = !x || (!tutorial && lvl < x.unlock_level);
+  }
+  paint();
+  m.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-cat]'); if (t) { cat = t.dataset.cat; paint(); return; }
+    const c = e.target.closest('[data-pick]'); if (c && !c.disabled) { pick = c.dataset.pick; paint(); }
+  });
+  $('#no').onclick = () => m.remove();
+  $('#go').onclick = async (e) => {
     e.target.disabled = true;
-    const { error } = tutorial
+    const { error } = tutorial && !orchardDone
       ? await supabase.rpc('plant_apples', { p_slot: slot })
-      : await supabase.rpc('build_building', { p_type_slug: m.querySelector('#bt').value, p_slot: slot, p_region: region });
+      : await supabase.rpc('build_building', { p_type_slug: pick, p_slot: slot, p_region: region });
     if (error) { toast(error.message, true); e.target.disabled = false; return; }
     m.remove();
-    toast(tutorial ? 'Apples planted!' : 'Construction started!');
+    toast(tutorial && !orchardDone ? 'Apples planted!' : 'Construction started!');
     window.dispatchEvent(new Event('hashchange'));
   };
 }

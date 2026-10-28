@@ -45,7 +45,9 @@ export async function mount() {
       return `<div class="bcard ${CLS.ready}">${head}<div class="flow"><span><b>${esc(o.out)}</b> is finished.</span></div>
         <button class="btn" data-collect="${o.job}">Collect</button></div>`;
     }
-    if (o.state === 'passive') return `<div class="bcard s-idle">${head}<div class="flow"><span>This building type has no production recipes.</span></div></div>`;
+    if (o.state === 'passive') return bl?.building_types?.slug === 'grocery-store'
+      ? `<div class="bcard s-ready">${head}<div class="flow"><span>This store sells your goods to customers. Set prices in Retail.</span></div><a class="btn" href="#/retail/stores">Open store</a></div>`
+      : `<div class="bcard s-idle">${head}<div class="flow"><span>This building type has no production recipes.</span></div></div>`;
     // idle / blocked: a start form
     const recipes = ops.recipes.filter((r) => r.building_type_id === o.typeId);
     return `<div class="bcard ${CLS[o.state]}" data-b="${o.id}" data-lvl="${o.level}">${head}

@@ -86,6 +86,7 @@ function sheet(x, stock, priceOf) {
       <div class="fld"><label for="qty">Quantity (whole units)</label><input type="number" inputmode="numeric" min="1" step="1" value="10" id="qty" />
       <span class="hint">${money2(buyPx)} each</span><span class="err" id="qerr" role="alert"></span></div>
       <button class="btn" id="buy">Buy</button></div>` : '<p class="muted">The NPC does not sell this. Produce it or trade it on the Market.</p>'}
+    ${x.retail_ok ? '<p class="muted">Best price: sell it in your <a class="tag" href="#/retail/stores">Grocery Store</a> (customers pay more than the NPC).</p>' : ''}
     <div class="stack"><b>Sell to NPC</b>
       <div class="fld"><label for="sqty">Quantity (up to ${fq(have)})</label><input type="number" inputmode="decimal" min="0.01" step="0.01" max="${have}" value="${have >= 1 ? Math.min(10, Math.floor(have)) : ''}" id="sqty" ${have <= 0 ? 'disabled' : ''} />
       <span class="hint">${money2(sellPx)} each. ${have <= 0 ? 'You have none to sell.' : ''}</span><span class="err" id="serr" role="alert"></span></div>

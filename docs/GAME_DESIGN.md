@@ -32,7 +32,8 @@ New players enter as guests (Supabase anonymous sign-in). After the first buildi
 Players enter automatically as guests with $5,000 and Level 0:
 1. Name the company. 2. Buy Seeds and Water from the NPC (Warehouse).
 3. Plant apples on a Map land slot (builds an Apple Orchard for $1,000, uses 1 Seeds + 2 Water).
-4. Wait 3 minutes, collect the harvest: tutorial done, Level 1.
+4. Wait 3 minutes, collect the harvest: Level 1.
+5. Build a Grocery Store (60 s, $2,000). 6. Put apples on sale (Retail > Stores). 7. The first customer sale ends the tutorial.
 A "Save your progress" dialog appears right after planting. Land is per company (24 slots); a shared world map comes later.
 
 ## Early game (session 2, quest-log style)
@@ -41,7 +42,7 @@ Then a **Missions** list (target icon on the map) pays cash and XP for the next 
 Water Reservoir / Power Plant / Plantation, collect water, build in another region, own 5 buildings, reach Level 3.
 Missions are verified and paid by the server (`mission_status`, `claim_mission`).
 
-## World and regions
+## World and regions (shown as districts on one flat board, see docs/PHASE3_NOTES.md)
 Home Isle (L0, 24 plots, no freight), Verdant Coast (L2, farms +15%), Iron Ridge (L3, mines +15%),
 Port Meridian (L4, factories +15%), Sunspire Atoll (L5, utilities +15%). Remote regions add a land fee
 ($500 per distance step) and a freight cost when harvesting (2% x distance x quantity x transport). Each company
@@ -55,3 +56,12 @@ All progress is a timestamp in Postgres, never a browser timer.
 The map shows timers **only** for buildings under construction, upgrades, and the apple orchard crop.
 Closing the game changes nothing: on return the server settles finished upgrades and `welcome_back()` reports
 what completed while the player was away. Harvests wait in the building until collected.
+
+## Retail (migration 013)
+`grocery-store` (retail, L1, $2,000, 60 s) sells `retail_ok` goods (apples, oranges, grapes, grain) from the warehouse.
+Each shelf (`store_listings`, max 4 per store) sells `4 x store level` items per minute at the reference price
+(`resources.retail_ref` = base price x 1.8). Demand factor = clamp(2 - price/ref, 0, 1.5): half price sells 1.5x, double price 0.
+Sales are settled lazily on the server (`retail_settle`, called by `retail_sync`, `sync_progress`, `welcome_back` and every shelf change),
+from timestamps, so stores keep selling offline (max 24 h per settle). No stock means no sales and no banked demand.
+Revenue goes through `apply_cash` as `retail_sale`. Pages: Retail > Stores (set prices), Pricing (demand table), Sales Reports.
+Tuning numbers: `retail_rate_per_min` (base rate), `retail_demand` (curve), `retail_ref` (reference prices).
