@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0b1220" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#222222" />
   <title>Global Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" />
   <link rel="stylesheet" href="src/styles/main.css" />
   <link rel="stylesheet" href="src/styles/ui.css" />
   <link rel="stylesheet" href="src/styles/game.css" />
@@ -15,8 +18,12 @@
 </head>
 <body>
   <header id="topbar"></header>
+  <div id="stage">
+    <main id="app"></main>
+    <div id="drawer"></div>
+  </div>
+  <div id="subbar"></div>
   <nav id="nav"></nav>
-  <main id="app"></main>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>

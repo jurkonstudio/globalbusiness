@@ -15,4 +15,6 @@ export const MODULES = [
   { id: 'ranking', title: 'Ranking', subs: [ { id: 'companies', title: 'Companies' }, { id: 'players', title: 'Players' }, ] },
   { id: 'messages', title: 'Messages', subs: [ { id: 'inbox', title: 'Inbox' }, { id: 'sent', title: 'Sent' }, ] },
   { id: 'settings', title: 'Settings', subs: [ { id: 'profile', title: 'Profile' }, { id: 'preferences', title: 'Preferences' }, ] },
+  { id: 'search', title: 'Search', subs: [ { id: 'companies', title: 'Companies' } ] },
+  { id: 'menu', title: 'Menu', hideTabs: true, subs: [ { id: 'about', title: 'About' }, { id: 'library', title: 'Library' }, { id: 'referral', title: 'Referral program' }, { id: 'creators-club', title: 'Creators club' }, { id: 'achievements', title: 'Achievements' }, { id: 'notes', title: 'Notes' }, { id: 'redeem-code', title: 'Redeem code' }, { id: 'realms', title: 'Realms' } ] },
 ];

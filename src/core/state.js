@@ -1,14 +1,33 @@
 import { supabase } from './supabase.js';
 
-export const state = { company: null, economy: null, user: null };
+export const state = {
+  company: null, economy: null, user: null,
+  // Quick numbers for the top bar and the map's "Idle buildings" box
+  stats: { total: 0, slotsUsed: 0, idle: 0, nextIdle: null },
+  unread: 0,   // chat badge (no messages table yet)
+  alerts: 0,   // bell counter (no notifications table yet)
+};
 export const isGuest = () => !!state.user?.is_anonymous;
 
 export async function loadCompany() {
-  const [c, e] = await Promise.all([
+  const [c, e, b, j] = await Promise.all([
     supabase.from('companies').select('*').maybeSingle(),
     supabase.from('economy').select('*').maybeSingle(),
+    supabase.from('buildings').select('id, slot'),
+    supabase.from('production_jobs').select('building_id, finish_at').eq('collected', false),
   ]);
   state.company = c.data;
   state.economy = e.data;
+
+  const buildings = b.data ?? [], now = Date.now();
+  const running = (j.data ?? []).filter((x) => new Date(x.finish_at) > now)
+    .sort((x, y) => new Date(x.finish_at) - new Date(y.finish_at));
+  const busy = new Set(running.map((x) => x.building_id));
+  state.stats = {
+    total: buildings.length,
+    slotsUsed: buildings.filter((x) => x.slot !== null).length,
+    idle: buildings.filter((x) => !busy.has(x.id)).length,
+    nextIdle: running[0] ? new Date(running[0].finish_at) : null,
+  };
   return c.data;
 }

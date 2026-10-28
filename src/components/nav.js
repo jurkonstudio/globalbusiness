@@ -1,0 +1,46 @@
+import { TABS, HUBS, DRAWER } from '../config/layout.js';
+import { ic } from '../config/icons.js';
+import { state, isGuest } from '../core/state.js';
+import { supabase } from '../core/supabase.js';
+import { openSaveProgress } from './saveProgress.js';
+
+export function renderBottomNav(hub) {
+  document.getElementById('nav').innerHTML = TABS.map((t) => `
+    <a href="${t.to}" class="${t.id === hub ? 'active' : ''}">
+      <span class="ico">${ic(t.icon)}${t.id === 'chat' && state.unread ? `<i class="badge">${state.unread}</i>` : ''}</span>
+      <span class="lbl">${t.title}</span></a>`).join('');
+}
+
+// Icon row above the bottom tabs. Empty for areas without sub-pages (e.g. Map).
+export function renderSubbar(hub, active) {
+  const items = HUBS[hub]?.items ?? [];
+  document.getElementById('subbar').innerHTML = items.map((it, i) =>
+    `<a href="${it.to}" class="${i === active ? 'active' : ''}" title="${it.title}" aria-label="${it.title}">${ic(it.icon)}</a>`).join('');
+}
+
+export function renderDrawer() {
+  const el = document.getElementById('drawer');
+  el.innerHTML = `<div class="drawer-list">
+    ${isGuest() ? '<button class="d-item hot" data-act="save">Save progress</button>' : ''}
+    ${DRAWER.map((d) => `<a class="d-item" href="${d.to}">${d.title}</a>`).join('')}
+    <button class="d-item out" data-act="logout">Log out</button></div>`;
+  el.onclick = async (e) => {
+    const act = e.target.dataset.act;
+    if (e.target === el) return closeDrawer();
+    if (act === 'save') { closeDrawer(); openSaveProgress(); }
+    if (act === 'logout') {
+      if (isGuest() && !confirm('You are a guest. Logging out will lose this company. Log out anyway?')) return;
+      await supabase.auth.signOut();
+      state.company = null;
+      location.hash = '#/auth/login';
+      location.reload();
+    }
+  };
+}
+
+export const toggleDrawer = () => document.body.classList.toggle('drawer-open');
+export const closeDrawer = () => document.body.classList.remove('drawer-open');
+export function clearChrome() {
+  for (const id of ['nav', 'subbar', 'drawer']) document.getElementById(id).innerHTML = '';
+  closeDrawer();
+}
