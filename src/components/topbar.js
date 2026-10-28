@@ -1,4 +1,5 @@
-import { state } from '../core/state.js';
+import { state, isGuest } from '../core/state.js';
+import { openAuthPanel } from './authPanel.js';
 import { ic } from '../config/icons.js';
 import { toggleDrawer } from './nav.js';
 
@@ -17,7 +18,9 @@ export function renderTopbar() {
         <span class="who"><b>${c.name}</b><small>Level ${c.level} · ${pct}% to next</small></span></a>
       <button class="phase" id="open-economy" data-p="${phase}" aria-label="Economy"><i></i><span>${cap(phase)}</span></button>
       <a class="cash" href="#/banking/account"><small>Cash</small><b>${money(c.cash)}</b></a>
-      <span class="xp" style="--p:${pct}%"></span>` : '<span class="brand"></span>'}`;
+      <span class="xp" style="--p:${pct}%"></span>` : '<span class="brand"></span>'}
+    ${isGuest() ? `<button class="acct" id="open-auth" aria-label="Log in or create account">${ic('exec')}<span>Log in</span></button>` : ''}`;
+  document.getElementById('open-auth')?.addEventListener('click', () => openAuthPanel('signup'));
   document.getElementById('open-drawer').onclick = toggleDrawer;
   document.getElementById('open-economy')?.addEventListener('click', openEconomy);
 }

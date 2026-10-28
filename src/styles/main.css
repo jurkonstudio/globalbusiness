@@ -99,3 +99,12 @@ body.drawer-open #drawer { display:block; background:rgba(13,27,42,.5); backdrop
   background:var(--ink3); color:var(--gold); font:700 .85rem var(--font-head); }
 .d-item.hot { width:100%; margin-top:16px; background:var(--brand); color:#fff; justify-content:center; }
 .d-item.out { width:100%; justify-content:center; background:none; border:1px solid rgba(255,255,255,.16); color:#ff9d8a; }
+
+/* Account button (guests only) + auth sheet tabs */
+.acct { flex:none; display:flex; align-items:center; gap:5px; height:34px; padding:0 11px 0 9px; border:0; cursor:pointer;
+  border-radius:999px; background:var(--brand); color:#fff; font:700 .78rem var(--font-body); }
+.acct .ic { width:18px; height:18px; }
+@media (max-width:420px) { .acct span { display:none; } .acct { width:34px; padding:0; justify-content:center; } }
+.seg { display:flex; padding:4px; gap:4px; border-radius:12px; background:var(--paper2); }
+.seg button { flex:1; height:36px; border:0; border-radius:9px; background:none; color:var(--muted); font:700 .85rem var(--font-body); cursor:pointer; }
+.seg button.on { background:var(--ink); color:#fff; }
