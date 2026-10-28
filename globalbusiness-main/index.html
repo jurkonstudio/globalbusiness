@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1b2a" />
+  <title>Global Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" />
+  <link rel="stylesheet" href="src/styles/main.css" />
+  <link rel="stylesheet" href="src/styles/ui.css" />
+  <link rel="stylesheet" href="src/styles/game.css" />
+  <link rel="stylesheet" href="src/styles/tutorial.css" />
+  <link rel="stylesheet" href="src/styles/polish.css" />
+  <script type="importmap">
+    { "imports": { "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.4" } }
+  </script>
+</head>
+<body>
+  <header id="topbar"></header>
+  <div id="subbar" role="navigation" aria-label="Section"></div>
+  <div id="stage">
+    <main id="app"></main>
+  </div>
+  <nav id="nav" aria-label="Main"></nav>
+  <div id="drawer"></div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
